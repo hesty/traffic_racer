@@ -9,6 +9,12 @@
 
 This mobile game is developed using Flutter, offering a fun and engaging experience for users. Use flame_engine for the game engine.
 
+### Screenshots
+
+![Screenshot 1](screenshots/1.png)
+![Screenshot 2](screenshots/2.png)
+![Screenshot 3](screenshots/3.png)
+
 ### Getting Started
 
 To run this project locally:
@@ -31,6 +37,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 Bu mobil oyun, Flutter kullanılarak geliştirilmiş olup, kullanıcılara eğlenceli ve sürükleyici bir deneyim sunmaktadır. flame_engine kullanılarak geliştirilmiştir.
 
+### Ekran Görüntüleri
+
+![Ekran Görüntüsü 1](screenshots/1.png)
+![Ekran Görüntüsü 2](screenshots/2.png)
+![Ekran Görüntüsü 3](screenshots/3.png)
 
 ### Başlangıç
 
