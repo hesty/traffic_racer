@@ -11,9 +11,9 @@ This mobile game is developed using Flutter, offering a fun and engaging experie
 
 ### Screenshots
 
-![Screenshot 1](screenshots/1.png)
-![Screenshot 2](screenshots/2.png)
-![Screenshot 3](screenshots/3.png)
+![Screenshot 1](screenshot/1.png)
+![Screenshot 2](screenshot/2.png)
+![Screenshot 3](screenshot/3.png)
 
 ### Getting Started
 
@@ -39,9 +39,9 @@ Bu mobil oyun, Flutter kullanılarak geliştirilmiş olup, kullanıcılara eğle
 
 ### Ekran Görüntüleri
 
-![Ekran Görüntüsü 1](screenshots/1.png)
-![Ekran Görüntüsü 2](screenshots/2.png)
-![Ekran Görüntüsü 3](screenshots/3.png)
+![Ekran Görüntüsü 1](screenshot/1.png)
+![Ekran Görüntüsü 2](screenshot/2.png)
+![Ekran Görüntüsü 3](screenshot/3.png)
 
 ### Başlangıç
 
