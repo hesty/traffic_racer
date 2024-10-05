@@ -14,9 +14,15 @@ class LandingPageOverlay extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Traffic Racer',
-              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Text(
+                  'Turbo Traffic Rush',
+                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
             ),
             const SizedBox(height: 50),
             ElevatedButton(

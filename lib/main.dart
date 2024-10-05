@@ -7,7 +7,7 @@ import 'overlays/landing_page_overlay.dart';
 void main() {
   runApp(
     MaterialApp(
-      title: 'Traffic Racer',
+      title: 'Turbo Traffic Rush',
       home: Scaffold(
         body: GameWidget<TrafficRacerGame>(
           game: TrafficRacerGame(),
