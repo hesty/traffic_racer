@@ -141,15 +141,18 @@ class TrafficRacerGame extends FlameGame with HorizontalDragDetector, HasCollisi
     if (isPaused || isGameOver || dragStartPosition == null) return;
 
     final screenWidth = size.x;
-    final maxMoveDistance = screenWidth / 4;
+    final laneWidth = screenWidth / 4; // Assuming 3 lanes
     final dragDistance = info.eventPosition.global.x - dragStartPosition!.x;
     final dragDirection = dragDistance.sign;
 
-    final totalMovement = dragDirection * (dragDistance.abs()).clamp(0, maxMoveDistance);
+    // Move the car by one lane width in the drag direction
+    if (dragDistance.abs() > laneWidth / 2) {
+      final newX = (car.position.x + dragDirection * laneWidth).clamp(0.0, screenWidth - car.size.x);
+      car.position.x = newX;
 
-    final newX = (car.position.x + totalMovement).clamp(0.0, screenWidth - car.size.x);
-
-    car.position.x = newX;
+      // Reset drag start position to allow for consecutive lane changes
+      dragStartPosition = info.eventPosition.global;
+    }
   }
 
   @override
