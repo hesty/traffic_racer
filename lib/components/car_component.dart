@@ -40,8 +40,8 @@ class CarComponent extends SpriteComponent with HasGameRef<TrafficRacerGame> {
   bool checkCollision(PositionComponent other) {
     final carRect = Rect.fromCenter(
       center: center.toOffset(),
-      width: width * 0.6,
-      height: height * 0.6,
+      width: width * 0.2,
+      height: height * 0.2,
     );
     return carRect.overlaps(other.toRect());
   }
