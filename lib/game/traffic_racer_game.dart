@@ -119,7 +119,7 @@ class TrafficRacerGame extends FlameGame with HorizontalDragDetector, HasCollisi
     spawnObstacle();
 
     // Reset car position
-    car.position = Vector2(size.x / 2, size.y - car.size.y - 20);
+    car.position = Vector2(size.x / 3, size.y - car.size.y);
 
     // Reset roads
     road1.position.y = 0;
@@ -150,8 +150,8 @@ class TrafficRacerGame extends FlameGame with HorizontalDragDetector, HasCollisi
       final newX = (car.position.x + dragDirection * laneWidth).clamp(0.0, screenWidth - car.size.x);
       car.position.x = newX;
 
-      // Reset drag start position to allow for consecutive lane changes
-      dragStartPosition = info.eventPosition.global;
+      // Reset drag start position to prevent multiple lane changes in one drag
+      dragStartPosition = null;
     }
   }
 
