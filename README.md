@@ -25,6 +25,10 @@ Turbo Traffic Rush is a portrait, pseudo-3D arcade traffic racer built with **Fl
 - **Synthesised audio:** pitched engine loop, crash, whoosh, pickups, nitro, level-up fanfare and a synthwave music loop, all generated from `scripts/generate_audio.py`.
 - **Controls:** swipe, tap either half of the screen, keyboard (←/→, A/D, Space, P/Esc) or optional **tilt steering**.
 - **Persistent best score & distance**, sound / music / tilt toggles, pause and app-lifecycle handling.
+- **Daily missions:** three goals per calendar day (deterministic, no server) that pay coins; finish all three for a bonus.
+- **Garage & coins:** every run earns coins from distance and near misses; spend them on ten unlockable car bodies and colours, previewed exactly as they look on the road.
+- **Ghost racer:** your best run is recorded as pace-over-time and replayed as a translucent car ahead of you, with a live gap readout and a bonus for beating it.
+- **Daily streak:** consecutive days played multiply coin income (up to +50%).
 
 ### Screenshots
 
@@ -74,25 +78,28 @@ lib/
   core/        game_config (tuning constants), projection (camera math), track (procedural looping road)
   entities/    player, traffic_vehicle, power_up_pickup — plain data, no Flame components
   game/        traffic_racer_game (state machine + simulation), traffic_manager, score_keeper,
-               power_up_manager, hud_model
+               power_up_manager, hud_model, progression_coordinator (run hooks → progression)
+  progression/ pure Dart: missions, garage/wallet/coin formula, ghost trace/recorder/player, streak
   world/       world_component (one render pass: sky → road → depth-sorted sprites → player → effects),
                sky_painter, vehicle_painter, world_palette, effects
-  services/    audio_service, settings_service, high_score_service, tilt_controller
-  overlays/    menu, hud, pause, game over (Flutter widgets on top of the game)
+  services/    audio_service, settings_service, high_score_service, tilt_controller,
+               missions_service, garage_service, streak_service, ghost_service
+  overlays/    menu, hud, pause, game over, garage (Flutter widgets on top of the game)
 scripts/       generate_audio.py — regenerates every WAV in assets/audio
-test/          projection, track, scoring, traffic wall-avoidance, offscreen render of a full run
+test/          projection, track, scoring, traffic wall-avoidance, missions/garage/ghost/streak,
+               persistence round-trips, overlay layout at phone sizes, offscreen render of a full run
 ```
 
 ### Development
 
 ```bash
 flutter analyze
-flutter test                                          # 18 tests, includes an offscreen render of ~1500 frames
+flutter test                                          # 47 tests, includes an offscreen render of ~1500 frames
 flutter run --dart-define=TTR_AUTOSTART=true          # debug only: skips the menu for quick QA screenshots
 python3 scripts/generate_audio.py                     # regenerate all sounds (needs numpy)
 ```
 
-Gameplay balance lives in `lib/core/game_config.dart` (speeds, lane count, spawn distances, power-up duration, combo window). Sounds are generated, not authored: edit the script rather than the WAV files.
+Gameplay balance lives in `lib/core/game_config.dart` (speeds, lane count, spawn distances, power-up duration, combo window, mission targets and rewards, coin rates, streak cap); car prices are in `lib/progression/car_catalog.dart`. Sounds are generated, not authored: edit the script rather than the WAV files.
 
 ### Contributing
 
@@ -119,6 +126,10 @@ Turbo Traffic Rush, **Flutter** ve **Flame** motoruyla geliştirilmiş dikey, ps
 - **Sentezlenmiş ses:** hıza göre tonu değişen motor döngüsü, çarpışma, whoosh, pickup, nitro, seviye fanfarı ve synthwave müzik döngüsü; hepsi `scripts/generate_audio.py` ile üretilir.
 - **Kontroller:** kaydırma, ekranın sağ/sol yarısına dokunma, klavye (←/→, A/D, Boşluk, P/Esc) veya isteğe bağlı **eğim (tilt) kontrolü**.
 - **Kalıcı en iyi skor ve mesafe**, ses / müzik / tilt anahtarları, duraklatma ve uygulama yaşam döngüsü yönetimi.
+- **Günlük görevler:** takvim gününe göre belirlenen (sunucusuz) üç hedef coin öder; üçünü de bitirince bonus.
+- **Garaj ve coin:** her tur mesafe ve near-miss'ten coin kazandırır; on farklı açılabilir gövde/renk, yolda göründüğü gibi önizlenir.
+- **Ghost yarışçı:** en iyi turunuz zamana bağlı tempo olarak kaydedilir ve önünüzde yarı saydam bir araba olarak tekrar oynatılır; canlı fark göstergesi ve geçme bonusu.
+- **Günlük seri:** art arda oynanan günler coin kazancını çarpar (en fazla +%50).
 
 ### Ekran Görüntüleri
 
@@ -168,25 +179,28 @@ lib/
   core/        game_config (ayar sabitleri), projection (kamera matematiği), track (prosedürel döngüsel yol)
   entities/    player, traffic_vehicle, power_up_pickup — Flame bileşeni değil, saf veri
   game/        traffic_racer_game (durum makinesi + simülasyon), traffic_manager, score_keeper,
-               power_up_manager, hud_model
+               power_up_manager, hud_model, progression_coordinator (tur kancaları → ilerleme katmanı)
+  progression/ saf Dart: görevler, garaj/cüzdan/coin formülü, ghost izi/kayıt/oynatma, seri
   world/       world_component (tek çizim geçişi: gökyüzü → yol → derinlik sıralı sprite'lar → oyuncu → efektler),
                sky_painter, vehicle_painter, world_palette, effects
-  services/    audio_service, settings_service, high_score_service, tilt_controller
-  overlays/    menü, HUD, duraklatma, oyun sonu (oyunun üstündeki Flutter widget'ları)
+  services/    audio_service, settings_service, high_score_service, tilt_controller,
+               missions_service, garage_service, streak_service, ghost_service
+  overlays/    menü, HUD, duraklatma, oyun sonu, garaj (oyunun üstündeki Flutter widget'ları)
 scripts/       generate_audio.py — assets/audio içindeki tüm WAV'ları yeniden üretir
-test/          projeksiyon, pist, skor, trafik duvar-önleme, tam bir turun ekran dışı render'ı
+test/          projeksiyon, pist, skor, trafik duvar-önleme, görev/garaj/ghost/seri mantığı,
+               kalıcılık, telefon boyutlarında overlay yerleşimi, tam bir turun ekran dışı render'ı
 ```
 
 ### Geliştirme
 
 ```bash
 flutter analyze
-flutter test                                          # 18 test; ~1500 karelik ekran dışı render dahil
+flutter test                                          # 47 test; ~1500 karelik ekran dışı render dahil
 flutter run --dart-define=TTR_AUTOSTART=true          # yalnızca debug: hızlı QA görüntüsü için menüyü atlar
 python3 scripts/generate_audio.py                     # tüm sesleri yeniden üret (numpy gerekir)
 ```
 
-Oynanış dengesi `lib/core/game_config.dart` içindedir (hızlar, şerit sayısı, spawn mesafeleri, güçlendirme süresi, kombo penceresi). Sesler üretilir, elle hazırlanmaz: WAV'ları değil betiği düzenleyin.
+Oynanış dengesi `lib/core/game_config.dart` içindedir (hızlar, şerit sayısı, spawn mesafeleri, güçlendirme süresi, kombo penceresi, görev hedefleri ve ödülleri, coin oranları, seri tavanı); araba fiyatları `lib/progression/car_catalog.dart` içindedir. Sesler üretilir, elle hazırlanmaz: WAV'ları değil betiği düzenleyin.
 
 ### Katkıda Bulunma
 
