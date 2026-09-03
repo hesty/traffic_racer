@@ -11,36 +11,34 @@ class PauseOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       color: const Color(0xAA05071A),
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 32),
-          padding: const EdgeInsets.all(28),
-          decoration: UiTheme.panelDecoration(radius: 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('PAUSED', style: UiTheme.title(36)),
-              const SizedBox(height: 28),
-              PrimaryButton(
-                label: 'RESUME',
-                icon: Icons.play_arrow_rounded,
-                onPressed: game.resumeRun,
-              ),
-              const SizedBox(height: 12),
-              GhostButton(
-                label: 'RESTART',
-                icon: Icons.replay_rounded,
-                onPressed: game.restartRun,
-              ),
-              const SizedBox(height: 12),
-              GhostButton(
-                label: 'MAIN MENU',
-                icon: Icons.home_rounded,
-                onPressed: game.backToMenu,
-              ),
-            ],
-          ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const Spacer(flex: 2),
+            Text('PAUSED', style: UiTheme.title(40)),
+            const Spacer(flex: 3),
+            PrimaryButton(
+              label: 'RESUME',
+              icon: Icons.play_arrow_rounded,
+              onPressed: game.resumeRun,
+            ),
+            const SizedBox(height: 12),
+            GhostButton(
+              label: 'RESTART',
+              icon: Icons.replay_rounded,
+              onPressed: game.restartRun,
+            ),
+            const SizedBox(height: 12),
+            GhostButton(
+              label: 'MENU',
+              icon: Icons.home_rounded,
+              onPressed: game.backToMenu,
+            ),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
     );

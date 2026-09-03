@@ -42,6 +42,9 @@ class GameConfig {
   static const double powerUpSpawnInterval = 9;
   static const double crashDuration = 1.4;
 
+  /// Seconds after a run starts during which the player's lane stays clear.
+  static const double startGraceSeconds = 3;
+
   /// Distance (world units) at which a rear-end counts as a collision.
   static const double collisionLength = segmentLength * 1.1;
 

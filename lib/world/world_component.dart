@@ -185,11 +185,17 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
     final game = this.game;
     final playerZ = game.playerTrackZ;
 
+    // Anything more than a car length behind the player's bumper has left
+    // the picture; drawing it would only paint a huge sprite over the player.
+    const behindLimit = -GameConfig.segmentLength * 1.2;
+
     final items = <_SpriteRef>[];
     for (final v in game.traffic.vehicles) {
       final seg = track.segmentAt(v.z);
       if (seg.frame != _frame) continue;
-      items.add(_SpriteRef(track.signedDistance(playerZ, v.z), vehicle: v, seg: seg));
+      final rel = track.signedDistance(playerZ, v.z);
+      if (rel < behindLimit) continue;
+      items.add(_SpriteRef(rel, vehicle: v, seg: seg));
     }
     for (final p in game.pickups) {
       final seg = track.segmentAt(p.z);
@@ -198,8 +204,9 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
     }
     items.sort((a, b) => b.rel.compareTo(a.rel));
 
-    // In the menu the road idles behind the title; no car is on it yet.
-    var playerDrawn = game.phase == GamePhase.menu;
+    // Behind the menu and result screens the road is just a backdrop.
+    var playerDrawn =
+        game.phase == GamePhase.menu || game.phase == GamePhase.gameOver;
     for (final item in items) {
       if (!playerDrawn && item.rel < 0) {
         _drawPlayer(canvas, w, h, cameraX, palette);

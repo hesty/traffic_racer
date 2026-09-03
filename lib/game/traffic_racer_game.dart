@@ -122,7 +122,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     if (_autoStartRequested) startRun();
   }
 
-  /// Debug-only QA hook: `flutter run --dart-define=TTR_AUTOSTART=1` skips
+  /// Debug-only QA hook: `flutter run --dart-define=TTR_AUTOSTART=true` skips
   /// the menu so a run can be screenshotted without any input.
   static bool get _autoStartRequested =>
       kDebugMode && const bool.fromEnvironment('TTR_AUTOSTART');
@@ -295,8 +295,10 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
   void _updateCrash(double dt) {
     crashTimer -= dt;
-    speed = math.max(0, speed - GameConfig.maxSpeed * 1.4 * dt);
+    // The wreck stops almost instantly while traffic keeps flowing past.
+    speed = math.max(0, speed - GameConfig.maxSpeed * 4 * dt);
     position = track.wrap(position + speed * dt);
+    traffic.update(dt, playerZ: playerTrackZ);
     if (crashTimer <= 0) _finishRun();
   }
 
@@ -324,7 +326,11 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
     final playerZ = playerTrackZ;
     traffic.update(worldDt, playerZ: playerZ);
-    traffic.maintain(playerZ: playerZ, playerSpeed: speed, level: stats.level);
+    traffic.maintain(
+      playerZ: playerZ,
+      level: stats.level,
+      avoidLane: runTime < GameConfig.startGraceSeconds ? player.lane : null,
+    );
     skyOffset += track.segmentAt(position).curve * speedFraction * dt * 90;
     dayPhase = (stats.distance / _unitsPerMeter / _dayCycleMeters) % 1;
 

@@ -11,7 +11,7 @@ void main() {
     final manager = TrafficManager(track, random: Random(1));
     var playerZ = 0.0;
     for (var step = 0; step < 400; step++) {
-      manager.maintain(playerZ: playerZ, playerSpeed: 6000, level: 9);
+      manager.maintain(playerZ: playerZ, level: 9);
       manager.update(1 / 30, playerZ: playerZ);
       playerZ = track.wrap(playerZ + 6000 / 30);
 
@@ -29,10 +29,18 @@ void main() {
     expect(manager.vehicles, isNotEmpty);
   });
 
+  test('avoidLane keeps the given lane empty', () {
+    final track = Track.flat(400);
+    final manager = TrafficManager(track, random: Random(3));
+    manager.maintain(playerZ: 0, level: 5, avoidLane: 1);
+    expect(manager.vehicles, isNotEmpty);
+    expect(manager.vehicles.every((v) => v.lane != 1), isTrue);
+  });
+
   test('vehicles spawn ahead of the player and get recycled behind', () {
     final track = Track.flat(400);
     final manager = TrafficManager(track, random: Random(2));
-    manager.maintain(playerZ: 0, playerSpeed: 6000, level: 1);
+    manager.maintain(playerZ: 0, level: 1);
     for (final v in manager.vehicles) {
       final rel = track.signedDistance(0, v.z);
       expect(rel, greaterThanOrEqualTo(GameConfig.minSpawnAhead));

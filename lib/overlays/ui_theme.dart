@@ -106,32 +106,3 @@ class GhostButton extends StatelessWidget {
     );
   }
 }
-
-class StatTile extends StatelessWidget {
-  const StatTile({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: color, size: 26),
-        const SizedBox(height: 6),
-        Text(value, style: UiTheme.value),
-        const SizedBox(height: 2),
-        Text(label.toUpperCase(), style: UiTheme.label.copyWith(fontSize: 11)),
-      ],
-    );
-  }
-}

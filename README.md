@@ -7,7 +7,14 @@
 
 ### About the Project
 
-This mobile game is developed using Flutter, offering a fun and engaging experience for users. Use flame_engine for the game engine.
+Turbo Traffic Rush is a pseudo-3D arcade traffic racer built with Flutter and the Flame engine. The road is rendered with a classic perspective-segment technique (curves, hills, day/night cycle, distance fog), the cars are drawn procedurally on the canvas, and every sound effect plus the background music loop is synthesised by `scripts/generate_audio.py`.
+
+**Gameplay:** swipe or tap to hop lanes, squeeze past traffic for near-miss combos, collect shield / nitro / 2x / slow-mo power-ups, survive as the traffic gets faster each level. Optional tilt steering, persistent high score.
+
+**Dev notes**
+- `flutter test` covers projection math, track generation, scoring, traffic wall-avoidance and an offscreen render of a full run.
+- `flutter run --dart-define=TTR_AUTOSTART=true` skips the menu (debug only) for quick QA screenshots.
+- Regenerate audio with `python3 scripts/generate_audio.py` (needs numpy).
 
 ### Screenshots
 

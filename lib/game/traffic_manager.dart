@@ -31,25 +31,28 @@ class TrafficManager {
   void clear() => vehicles.clear();
 
   /// Keeps the vehicle count topped up for the current level.
+  /// [avoidLane] keeps a lane clear of new spawns (used for the start grace
+  /// period so the first seconds are never an instant crash).
   void maintain({
     required double playerZ,
-    required double playerSpeed,
     required int level,
+    int? avoidLane,
   }) {
     final target = GameConfig.trafficCountForLevel(level);
     var attempts = 0;
     while (vehicles.length < target && attempts < 20) {
       attempts++;
-      _trySpawn(playerZ, playerSpeed);
+      _trySpawn(playerZ, avoidLane);
     }
   }
 
-  void _trySpawn(double playerZ, double playerSpeed) {
+  void _trySpawn(double playerZ, int? avoidLane) {
     final ahead = GameConfig.minSpawnAhead +
         _rng.nextDouble() *
             (GameConfig.maxSpawnAhead - GameConfig.minSpawnAhead);
     final z = track.wrap(playerZ + ahead);
     final lane = _rng.nextInt(GameConfig.laneCount);
+    if (lane == avoidLane) return;
     if (!_laneIsFree(z, lane)) return;
     if (!_leavesAGap(z, lane)) return;
 
