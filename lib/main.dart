@@ -1,25 +1,56 @@
-import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'game/traffic_racer_game.dart';
 import 'overlays/game_over_overlay.dart';
-import 'overlays/landing_page_overlay.dart';
 import 'overlays/hud_overlay.dart';
+import 'overlays/menu_overlay.dart';
+import 'overlays/pause_overlay.dart';
+import 'services/high_score_service.dart';
+import 'services/settings_service.dart';
 
-void main() {
-  runApp(
-    MaterialApp(
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+  final settings = SettingsService();
+  final highScores = HighScoreService();
+  await Future.wait([settings.load(), highScores.load()]);
+
+  runApp(TurboTrafficRushApp(settings: settings, highScores: highScores));
+}
+
+class TurboTrafficRushApp extends StatelessWidget {
+  const TurboTrafficRushApp({
+    super.key,
+    required this.settings,
+    required this.highScores,
+  });
+
+  final SettingsService settings;
+  final HighScoreService highScores;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
       title: 'Turbo Traffic Rush',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(useMaterial3: true),
       home: Scaffold(
-        body: GameWidget<TrafficRacerGame>(
-          game: TrafficRacerGame(),
+        backgroundColor: const Color(0xFF05071A),
+        body: GameWidget<TrafficRacerGame>.controlled(
+          gameFactory: () =>
+              TrafficRacerGame(settings: settings, highScores: highScores),
           overlayBuilderMap: {
-            'gameOver': (context, game) => GameOverOverlay(game: game),
-            'landingPage': (context, game) => LandingPageOverlay(game: game),
-            'hud': (context, game) => HudOverlay(game: game),
+            Overlays.menu: (_, game) => MenuOverlay(game: game),
+            Overlays.hud: (_, game) => HudOverlay(game: game),
+            Overlays.pause: (_, game) => PauseOverlay(game: game),
+            Overlays.gameOver: (_, game) => GameOverOverlay(game: game),
           },
-          initialActiveOverlays: const ['landingPage'],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
