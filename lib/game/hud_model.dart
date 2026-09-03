@@ -13,6 +13,12 @@ class HudModel extends ChangeNotifier {
   int bestScore = 0;
   Map<PowerUpType, double> powerUpProgress = const {};
 
+  /// Coins the run would pay if it ended now.
+  int coinsThisRun = 0;
+
+  /// Metres ahead of the ghost (negative = behind); null without a ghost.
+  int? ghostGapMeters;
+
   void publish({
     required int score,
     required int level,
@@ -21,6 +27,8 @@ class HudModel extends ChangeNotifier {
     required double comboProgress,
     required int bestScore,
     required Map<PowerUpType, double> powerUpProgress,
+    required int coinsThisRun,
+    required int? ghostGapMeters,
   }) {
     this.score = score;
     this.level = level;
@@ -29,6 +37,8 @@ class HudModel extends ChangeNotifier {
     this.comboProgress = comboProgress;
     this.bestScore = bestScore;
     this.powerUpProgress = powerUpProgress;
+    this.coinsThisRun = coinsThisRun;
+    this.ghostGapMeters = ghostGapMeters;
     notifyListeners();
   }
 }
