@@ -42,11 +42,11 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     required this.settings,
     required this.highScores,
     math.Random? random,
-  })  : _rng = random ?? math.Random(),
-        audio = AudioService(
-          soundEnabled: settings.soundEnabled,
-          musicEnabled: settings.musicEnabled,
-        );
+  }) : _rng = random ?? math.Random(),
+       audio = AudioService(
+         soundEnabled: settings.soundEnabled,
+         musicEnabled: settings.musicEnabled,
+       );
 
   final SettingsService settings;
   final HighScoreService highScores;
@@ -305,18 +305,22 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   void _simulate(double dt) {
     final expired = powerUps.tick(dt);
     for (final type in expired) {
-      _toast(type == PowerUpType.nitro ? 'NITRO OUT' : '${type.label} over',
-          type.color.withValues(alpha: 0.8));
+      _toast(
+        type == PowerUpType.nitro ? 'NITRO OUT' : '${type.label} over',
+        type.color.withValues(alpha: 0.8),
+      );
     }
 
     final worldDt = dt * powerUps.timeScale;
-    final targetSpeed = math.min(
+    final targetSpeed =
+        math.min(
           GameConfig.maxSpeed,
           GameConfig.baseSpeed + GameConfig.speedPerLevel * (stats.level - 1),
         ) *
         powerUps.speedMultiplier;
     speed += (targetSpeed - speed) * math.min(1, dt * 1.6);
-    nitroVisual += ((powerUps.isActive(PowerUpType.nitro) ? 1 : 0) - nitroVisual) *
+    nitroVisual +=
+        ((powerUps.isActive(PowerUpType.nitro) ? 1 : 0) - nitroVisual) *
         math.min(1, dt * 4);
 
     final dz = speed * worldDt;
@@ -358,7 +362,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       final overlapWidth =
           playerHalf + GameConfig.vehicleWidth * v.kind.widthFactor / 2;
 
-      if (rel.abs() < GameConfig.collisionLength && lateral < overlapWidth * 0.92) {
+      if (rel.abs() < GameConfig.collisionLength &&
+          lateral < overlapWidth * 0.92) {
         if (powerUps.shielded) {
           _smashThrough(v);
         } else {
@@ -368,7 +373,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
         continue;
       }
 
-      final crossedNow = !v.lastRelativeZ.isNaN && v.lastRelativeZ > 0 && rel <= 0;
+      final crossedNow =
+          !v.lastRelativeZ.isNaN && v.lastRelativeZ > 0 && rel <= 0;
       v.lastRelativeZ = rel;
       if (crossedNow && !v.passed) {
         v.passed = true;
@@ -385,13 +391,17 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     final bonus = stats.registerNearMiss(multiplier: powerUps.scoreMultiplier);
     audio.play(Sfx.whoosh, volume: 0.8);
     final side = v.lane < player.lane ? 0.28 : 0.72;
-    floatingTexts.add(FloatingText(
-      text: stats.combo > 1 ? 'NEAR MISS x${stats.combo}  +$bonus' : 'NEAR MISS  +$bonus',
-      color: const Color(0xFFFFE066),
-      x: side,
-      y: 0.62,
-      fontSize: stats.combo > 3 ? 26 : 22,
-    ));
+    floatingTexts.add(
+      FloatingText(
+        text: stats.combo > 1
+            ? 'NEAR MISS x${stats.combo}  +$bonus'
+            : 'NEAR MISS  +$bonus',
+        color: const Color(0xFFFFE066),
+        x: side,
+        y: 0.62,
+        fontSize: stats.combo > 3 ? 26 : 22,
+      ),
+    );
     _publishHud();
   }
 
@@ -407,8 +417,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   void _updatePickups(double dt, double playerZ) {
     _powerUpSpawnTimer -= dt;
     if (_powerUpSpawnTimer <= 0) {
-      _powerUpSpawnTimer = GameConfig.powerUpSpawnInterval *
-          (0.8 + _rng.nextDouble() * 0.5);
+      _powerUpSpawnTimer =
+          GameConfig.powerUpSpawnInterval * (0.8 + _rng.nextDouble() * 0.5);
       _spawnPickup(playerZ);
     }
 
@@ -430,9 +440,11 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
   void _spawnPickup(double playerZ) {
     final lane = _rng.nextInt(GameConfig.laneCount);
-    final z = track.wrap(playerZ +
-        GameConfig.minSpawnAhead +
-        _rng.nextDouble() * GameConfig.segmentLength * 60);
+    final z = track.wrap(
+      playerZ +
+          GameConfig.minSpawnAhead +
+          _rng.nextDouble() * GameConfig.segmentLength * 60,
+    );
     // Never drop a pickup on top of traffic.
     for (final v in traffic.vehicles) {
       if (v.lane == lane &&
@@ -460,39 +472,42 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
   void _onLevelUp() {
     audio.play(Sfx.levelUp);
-    floatingTexts.add(FloatingText(
-      text: 'LEVEL ${stats.level}',
-      color: const Color(0xFFFFFFFF),
-      x: 0.5,
-      y: 0.4,
-      life: 1.6,
-      fontSize: 40,
-    ));
+    floatingTexts.add(
+      FloatingText(
+        text: 'LEVEL ${stats.level}',
+        color: const Color(0xFFFFFFFF),
+        x: 0.5,
+        y: 0.4,
+        life: 1.6,
+        fontSize: 40,
+      ),
+    );
     _publishHud();
   }
 
   void _toast(String text, Color color, {double size = 22}) {
-    floatingTexts.add(FloatingText(
-      text: text,
-      color: color,
-      x: 0.5,
-      y: 0.55,
-      fontSize: size,
-    ));
+    floatingTexts.add(
+      FloatingText(text: text, color: color, x: 0.5, y: 0.55, fontSize: size),
+    );
   }
 
-  void _spawnDebris({required int count, Color color = const Color(0xFFFFC107)}) {
+  void _spawnDebris({
+    required int count,
+    Color color = const Color(0xFFFFC107),
+  }) {
     final origin = Offset(scene.playerScreenX, size.y * 0.9);
     for (var i = 0; i < count; i++) {
       final angle = -math.pi / 2 + (_rng.nextDouble() - 0.5) * math.pi * 1.2;
       final v = 250 + _rng.nextDouble() * 500;
-      debris.add(Debris(
-        position: origin,
-        velocity: Offset(math.cos(angle) * v, math.sin(angle) * v),
-        color: i.isEven ? color : const Color(0xFFB0BEC5),
-        size: 3 + _rng.nextDouble() * 6,
-        life: 0.8 + _rng.nextDouble() * 0.8,
-      ));
+      debris.add(
+        Debris(
+          position: origin,
+          velocity: Offset(math.cos(angle) * v, math.sin(angle) * v),
+          color: i.isEven ? color : const Color(0xFFB0BEC5),
+          size: 3 + _rng.nextDouble() * 6,
+          life: 0.8 + _rng.nextDouble() * 0.8,
+        ),
+      );
     }
   }
 
@@ -530,7 +545,10 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   // ---------------------------------------------------------------------
 
   @override
-  KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+  KeyEventResult onKeyEvent(
+    KeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
     if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.keyA) {
@@ -541,7 +559,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     } else if (key == LogicalKeyboardKey.escape ||
         key == LogicalKeyboardKey.keyP) {
       togglePause();
-    } else if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.enter) {
+    } else if (key == LogicalKeyboardKey.space ||
+        key == LogicalKeyboardKey.enter) {
       if (phase == GamePhase.menu || phase == GamePhase.gameOver) startRun();
     } else {
       return KeyEventResult.ignored;
