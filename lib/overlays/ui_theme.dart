@@ -6,6 +6,7 @@ class UiTheme {
 
   static const accent = Color(0xFFF2D21B);
   static const accentDark = Color(0xFFFF7A29);
+  static const coin = Color(0xFFFFC93C);
   static const panel = Color(0xCC0B1024);
   static const panelBorder = Color(0x33FFFFFF);
 
@@ -41,6 +42,72 @@ class UiTheme {
           BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 10)),
         ],
       );
+}
+
+/// Fills the available height so `Spacer`s inside [child] spread the content
+/// out, but falls back to scrolling when a short screen cannot fit it all.
+class FillOrScroll extends StatelessWidget {
+  const FillOrScroll({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+  });
+
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: padding,
+        child: ConstrainedBox(
+          constraints:
+              BoxConstraints(minHeight: constraints.maxHeight - padding.vertical),
+          child: IntrinsicHeight(child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small pill with an icon and a short label, used across menu, HUD and
+/// result screens.
+class InfoChip extends StatelessWidget {
+  const InfoChip({
+    super.key,
+    required this.icon,
+    required this.text,
+    this.color = Colors.white,
+    this.fontSize = 15,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color color;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black45,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: fontSize + 3),
+          const SizedBox(width: 6),
+          Text(text,
+              style: TextStyle(
+                  color: color, fontWeight: FontWeight.w800, fontSize: fontSize)),
+        ],
+      ),
+    );
+  }
 }
 
 class PrimaryButton extends StatelessWidget {
