@@ -5,7 +5,9 @@ import 'package:flame/components.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:turbo_traffic_rush/entities/traffic_vehicle.dart';
+import 'package:turbo_traffic_rush/game/progression_coordinator.dart';
 import 'package:turbo_traffic_rush/game/traffic_racer_game.dart';
+import 'package:turbo_traffic_rush/progression/ghost_trace.dart';
 import 'package:turbo_traffic_rush/services/high_score_service.dart';
 import 'package:turbo_traffic_rush/services/settings_service.dart';
 import 'package:turbo_traffic_rush/world/vehicle_painter.dart';
@@ -36,12 +38,22 @@ void main() {
 
   testWidgets('a full run renders hundreds of frames without throwing',
       (tester) async {
+    final progression = ProgressionCoordinator();
+    // A ghost quicker than the player off the line, so the ghost sprite is
+    // on screen ahead of the car for the whole test.
+    progression.ghosts.submit(GhostTrace([
+      for (var i = 0; i <= 60; i++)
+        GhostSample(t: i * 0.5, distanceMeters: i * 20.0, lane: i % 3),
+    ]));
     final game = TrafficRacerGame(
       settings: SettingsService(),
       highScores: HighScoreService(),
+      progression: progression,
       random: Random(5),
     );
-    for (final name in [Overlays.menu, Overlays.hud, Overlays.pause, Overlays.gameOver]) {
+    for (final name in [
+      Overlays.menu, Overlays.hud, Overlays.pause, Overlays.gameOver, Overlays.garage,
+    ]) {
       game.overlays.addEntry(name, (_, _) => const SizedBox());
     }
     game.onGameResize(Vector2(400, 800));
