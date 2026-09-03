@@ -66,4 +66,35 @@ class GameConfig {
   static const double minSpawnAhead = segmentLength * 60;
   static const double maxSpawnAhead = segmentLength * (drawDistance - 10);
   static const double despawnBehind = segmentLength * 8;
+
+  // --- Progression: daily missions --------------------------------------
+  static const int missionsPerDay = 3;
+
+  /// Target tiers per mission kind; the daily roll picks one tier for each
+  /// mission and pays the matching entry of [missionRewards].
+  static const List<int> missionNearMissTargets = [10, 15, 25];
+  static const List<int> missionDistanceTargets = [1500, 2500, 4000];
+  static const List<int> missionComboTargets = [4, 5, 7];
+  static const List<int> missionOvertakeTargets = [15, 25, 40];
+  static const List<int> missionPowerUpTargets = [4, 6, 9];
+  static const List<int> missionLevelTargets = [3, 4, 5];
+  static const List<int> missionSurviveTargets = [60, 90, 120];
+  static const List<int> missionRewards = [40, 60, 90];
+  static const int missionAllCompleteBonus = 75;
+
+  // --- Progression: coins & streak ---------------------------------------
+  static const double coinsPerMeter = 0.05;
+  static const int coinsPerNearMiss = 2;
+  static const int ghostBeatenBonus = 40;
+
+  /// Extra coin fraction per consecutive day played, capped at [streakBonusCap].
+  static const double streakBonusPerDay = 0.1;
+  static const double streakBonusCap = 0.5;
+
+  // --- Progression: ghost -----------------------------------------------
+  static const double ghostSampleInterval = 0.5;
+  static const double ghostAlpha = 0.42;
+
+  /// The ghost sprite is only placed on the track within this gap (metres).
+  static const double ghostVisibleMeters = 300;
 }
