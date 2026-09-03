@@ -175,6 +175,7 @@ class VehiclePainter {
           Offset(-w / 2, 0),
           Offset(w / 2, 0),
           [_shade(color, 0.7), _shade(color, 1.05), _shade(color, 0.8)],
+          const [0, 0.45, 1],
         ),
     );
     // Container ribs and rear doors.
@@ -209,6 +210,7 @@ class VehiclePainter {
           Offset(-w / 2, 0),
           Offset(w / 2, 0),
           [_shade(color, 0.75), color, _shade(color, 0.85)],
+          const [0, 0.45, 1],
         ),
     );
     // Big rear window and lower window strip.
@@ -274,6 +276,7 @@ class VehiclePainter {
             Offset(x, -h * 0.1),
             Offset(x, flameH),
             const [Color(0xFF9FDBFF), Color(0xFF2E7BFF), Color(0x002E7BFF)],
+            const [0, 0.5, 1],
           ),
       );
     }
