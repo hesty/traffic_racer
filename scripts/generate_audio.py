@@ -307,9 +307,54 @@ def music():
     write("music.wav", reverb(out, tail=0.0, mix=0.12)[:n], gain=0.8)
 
 
+def mission_complete():
+    """Quick two-note stinger plus a bell: a goal ticked off mid-race."""
+    notes = [(659.25, 0.0), (987.77, 0.07), (1318.5, 0.14)]
+    total = int(SR * 0.7)
+    out = np.zeros(total)
+    for f, start in notes:
+        x = t(0.3)
+        tone = 0.5 * square(f, x, 0.25) + 0.6 * np.sin(2 * math.pi * f * x)
+        tone *= adsr(x.size, a=0.004, d=0.06, s=0.5, r=0.15)
+        i = int(SR * start)
+        out[i:i + tone.size] += svf(tone, 5000)
+    b = bell(1975.5, 0.5)
+    i = int(SR * 0.2)
+    out[i:i + b.size] += b * 0.7
+    write("mission.wav", reverb(out, mix=0.3), gain=0.85)
+
+
+def ghost_beaten():
+    """Rising whoosh into a bright chord: you just passed your best self."""
+    x = t(1.0)
+    rush = svf(RNG.normal(0, 1, x.size), 500 + 4000 * (x / x[-1]) ** 2, q=1.8, mode="bp")
+    rush *= adsr(x.size, a=0.05, d=0.1, s=0.8, r=0.45) * 0.6
+    chord = np.zeros(x.size)
+    for i, f in enumerate([523.25, 659.25, 783.99, 1046.5]):
+        b = bell(f, 0.8)
+        s = int(SR * (0.3 + i * 0.04))
+        chord[s:s + min(b.size, x.size - s)] += b[:x.size - s] * 0.8
+    write("ghost.wav", reverb(rush + chord, tail=0.3, mix=0.35), gain=0.85)
+
+
+def unlock():
+    """Mechanical latch click followed by a short shimmer: a new car."""
+    x = t(0.6)
+    click = RNG.normal(0, 1, x.size) * np.exp(-x * 90) * 0.8
+    click = svf(click, 2500, q=1.2, mode="bp")
+    thud = np.sin(sweep(180, 70, x, curve=2.0)) * np.exp(-x * 25) * 0.7
+    shimmer = np.zeros(x.size)
+    for i, f in enumerate([1046.5, 1318.5, 1568.0]):
+        b = bell(f, 0.4)
+        s = int(SR * (0.08 + i * 0.05))
+        shimmer[s:s + min(b.size, x.size - s)] += b[:x.size - s] * 0.5
+    write("unlock.wav", reverb(click + thud + shimmer, mix=0.25), gain=0.8)
+
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
-    for fn in (engine, crash, pickup, whoosh, nitro, level_up, shield, lane_change, start_rev, music):
+    for fn in (engine, crash, pickup, whoosh, nitro, level_up, shield, lane_change, start_rev, music,
+               mission_complete, ghost_beaten, unlock):
         fn()
         print("ok", fn.__name__)
     print("generated:", sorted(os.listdir(OUT)))
