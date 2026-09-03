@@ -26,13 +26,37 @@ class HudOverlay extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _PauseButton(onPressed: game.pauseRun),
-                    const Spacer(),
-                    _ScoreBlock(hud: hud),
-                    const Spacer(),
-                    _Chip(icon: Icons.speed, text: 'LV ${hud.level}'),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: _ScoreBlock(hud: hud),
+                      ),
+                    ),
+                    InfoChip(icon: Icons.speed, text: 'LV ${hud.level}'),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (hud.ghostGapMeters case final gap?)
+                      InfoChip(
+                        icon: Icons.flag_rounded,
+                        text: 'GHOST ${gap >= 0 ? '+' : ''}$gap m',
+                        color: gap >= 0
+                            ? TrafficRacerGame.ghostColor
+                            : UiTheme.accentDark,
+                        fontSize: 13,
+                      ),
+                    const Spacer(),
+                    InfoChip(
+                      icon: Icons.monetization_on_rounded,
+                      text: '+${hud.coinsThisRun}',
+                      color: UiTheme.coin,
+                      fontSize: 13,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 if (hud.combo > 1) _ComboBanner(hud: hud),
                 const Spacer(),
                 _PowerUpRow(progress: hud.powerUpProgress),
@@ -94,35 +118,6 @@ class _ScoreBlock extends StatelessWidget {
                   fontSize: 11,
                   color: hud.score > hud.bestScore ? UiTheme.accent : Colors.white60)),
       ],
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black45,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 6),
-          Text(text,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-        ],
-      ),
     );
   }
 }
