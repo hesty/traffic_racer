@@ -129,15 +129,17 @@ class _TrackBuilder {
     final startY = lastY;
     final endY = startY + hill * GameConfig.segmentLength;
     final total = enter + hold + leave;
+    // Height uses (n + 1) so the section's last segment lands exactly on
+    // [endY]; this keeps hills continuous and the loop seam flat.
     for (var n = 0; n < enter; n++) {
-      add(easeIn(0, curve, n / enter), easeInOut(startY, endY, n / total));
+      add(easeIn(0, curve, n / enter), easeInOut(startY, endY, (n + 1) / total));
     }
     for (var n = 0; n < hold; n++) {
-      add(curve, easeInOut(startY, endY, (enter + n) / total));
+      add(curve, easeInOut(startY, endY, (enter + n + 1) / total));
     }
     for (var n = 0; n < leave; n++) {
       add(easeInOut(curve, 0, n / leave),
-          easeInOut(startY, endY, (enter + hold + n) / total));
+          easeInOut(startY, endY, (enter + hold + n + 1) / total));
     }
   }
 }
