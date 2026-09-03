@@ -1,39 +1,98 @@
-# Traffic Racer
+# Turbo Traffic Rush
 
 [English](#english) | [Türkçe](#türkçe)
+
+<p align="center">
+  <img src="screenshot/gameplay.gif" alt="Gameplay" width="260"/>
+</p>
 
 <a name="english"></a>
 ## English
 
-### About the Project
+### About
 
-Turbo Traffic Rush is a pseudo-3D arcade traffic racer built with Flutter and the Flame engine. The road is rendered with a classic perspective-segment technique (curves, hills, day/night cycle, distance fog), the cars are drawn procedurally on the canvas, and every sound effect plus the background music loop is synthesised by `scripts/generate_audio.py`.
+Turbo Traffic Rush is a portrait, pseudo-3D arcade traffic racer built with **Flutter** and the **Flame** engine. There are no sprite sheets or image assets: the road, scenery and every vehicle are drawn procedurally with `Canvas` calls, and every sound effect plus the background music loop is synthesised by a Python script.
 
-**Gameplay:** swipe or tap to hop lanes, squeeze past traffic for near-miss combos, collect shield / nitro / 2x / slow-mo power-ups, survive as the traffic gets faster each level. Optional tilt steering, persistent high score.
+### Features
 
-**Dev notes**
-- `flutter test` covers projection math, track generation, scoring, traffic wall-avoidance and an offscreen render of a full run.
-- `flutter run --dart-define=TTR_AUTOSTART=true` skips the menu (debug only) for quick QA screenshots.
-- Regenerate audio with `python3 scripts/generate_audio.py` (needs numpy).
+- **Pseudo-3D road** rendered with the classic perspective-segment technique: curves, hills, rumble strips, dashed lanes, distance fog and a parallax mountain backdrop.
+- **Day → dusk → night → dawn cycle** that shifts the whole palette as you drive.
+- **Procedural traffic** — sedans, hatchbacks, SUVs, vans, trucks and buses with brake lights, drawn at any depth without sprites.
+- **Fair traffic AI:** vehicles follow each other and never line up across all three lanes, so there is always a way through.
+- **Near-miss combos:** squeeze past a car in the neighbouring lane for bonus points that multiply with each consecutive pass.
+- **Power-ups:** Shield (smash through traffic), Nitro (speed + speed lines + exhaust flames), 2x score, Slow-mo.
+- **Levels:** every 1500 points the traffic gets faster and denser.
+- **Synthesised audio:** pitched engine loop, crash, whoosh, pickups, nitro, level-up fanfare and a synthwave music loop, all generated from `scripts/generate_audio.py`.
+- **Controls:** swipe, tap either half of the screen, keyboard (←/→, A/D, Space, P/Esc) or optional **tilt steering**.
+- **Persistent best score & distance**, sound / music / tilt toggles, pause and app-lifecycle handling.
 
 ### Screenshots
 
 <table>
   <tr>
-    <td><img src="screenshot/1.png" alt="Screenshot 1" width="200"/></td>
-    <td><img src="screenshot/2.png" alt="Screenshot 2" width="200"/></td>
-    <td><img src="screenshot/3.png" alt="Screenshot 3" width="200"/></td>
+    <td><img src="screenshot/menu.png" alt="Menu" width="200"/></td>
+    <td><img src="screenshot/play.png" alt="Gameplay" width="200"/></td>
+    <td><img src="screenshot/over.png" alt="Game over" width="200"/></td>
+  </tr>
+  <tr>
+    <td align="center">Menu</td>
+    <td align="center">Gameplay</td>
+    <td align="center">Game over</td>
   </tr>
 </table>
 
+▶ [Watch the gameplay video (mp4)](screenshot/gameplay.mp4)
+
+### How to Play
+
+| Action | Touch | Keyboard |
+| --- | --- | --- |
+| Change lane | Swipe left/right, or tap the left/right half | ← / → or A / D |
+| Pause / resume | Pause button | P or Esc |
+| Start / race again | Button | Space or Enter |
+| Tilt steering | Enable in the menu, lean the phone | — |
+
+Score grows with distance. Passing a car in the adjacent lane awards a **near miss** bonus; consecutive near misses within ~2.5 s build a combo multiplier. Colliding ends the run unless the Shield is active.
+
 ### Getting Started
 
-To run this project locally:
+Requirements: Flutter ≥ 3.44 (Dart ≥ 3.12).
 
-1. Ensure you have Flutter installed
-2. Clone this repository
-3. Run `flutter pub get` to install dependencies
-4. Run `flutter run` to start the app
+```bash
+git clone <this repository>
+cd traffic_racer
+flutter pub get
+flutter run
+```
+
+Targets Android and iOS. Tilt steering only appears on real mobile platforms.
+
+### Project Structure
+
+```
+lib/
+  core/        game_config (tuning constants), projection (camera math), track (procedural looping road)
+  entities/    player, traffic_vehicle, power_up_pickup — plain data, no Flame components
+  game/        traffic_racer_game (state machine + simulation), traffic_manager, score_keeper,
+               power_up_manager, hud_model
+  world/       world_component (one render pass: sky → road → depth-sorted sprites → player → effects),
+               sky_painter, vehicle_painter, world_palette, effects
+  services/    audio_service, settings_service, high_score_service, tilt_controller
+  overlays/    menu, hud, pause, game over (Flutter widgets on top of the game)
+scripts/       generate_audio.py — regenerates every WAV in assets/audio
+test/          projection, track, scoring, traffic wall-avoidance, offscreen render of a full run
+```
+
+### Development
+
+```bash
+flutter analyze
+flutter test                                          # 18 tests, includes an offscreen render of ~1500 frames
+flutter run --dart-define=TTR_AUTOSTART=true          # debug only: skips the menu for quick QA screenshots
+python3 scripts/generate_audio.py                     # regenerate all sounds (needs numpy)
+```
+
+Gameplay balance lives in `lib/core/game_config.dart` (speeds, lane count, spawn distances, power-up duration, combo window). Sounds are generated, not authored: edit the script rather than the WAV files.
 
 ### Contributing
 
@@ -44,30 +103,91 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 <a name="türkçe"></a>
 ## Türkçe
 
-### Proje Hakkında
+### Hakkında
 
-Bu mobil oyun, Flutter kullanılarak geliştirilmiş olup, kullanıcılara eğlenceli ve sürükleyici bir deneyim sunmaktadır. flame_engine kullanılarak geliştirilmiştir.
+Turbo Traffic Rush, **Flutter** ve **Flame** motoruyla geliştirilmiş dikey, pseudo-3D bir arcade trafik yarışıdır. Sprite ya da görsel asset kullanılmaz: yol, manzara ve tüm araçlar `Canvas` çağrılarıyla prosedürel olarak çizilir; tüm ses efektleri ve arka plan müziği bir Python betiğiyle sentezlenir.
+
+### Özellikler
+
+- **Pseudo-3D yol:** klasik perspektif-segment tekniğiyle virajlar, tepeler, bordür şeritleri, kesikli şerit çizgileri, mesafe sisi ve paralaks dağ silueti.
+- **Gündüz → akşam → gece → şafak döngüsü:** sürdükçe tüm palet değişir.
+- **Prosedürel trafik:** sedan, hatchback, SUV, panelvan, kamyon ve otobüs; fren lambalı, her derinlikte sprite'sız çizilir.
+- **Adil trafik yapay zekâsı:** araçlar birbirini takip eder ve üç şeridi aynı anda asla kapatmaz; her zaman bir geçiş vardır.
+- **Near-miss kombosu:** yan şeritteki araca sıyırarak geçince bonus; art arda geçişlerde çarpan büyür.
+- **Güçlendirmeler:** Kalkan (trafiği ezerek geç), Nitro (hız + hız çizgileri + egzoz alevi), 2x skor, Yavaş çekim.
+- **Seviyeler:** her 1500 puanda trafik hızlanır ve yoğunlaşır.
+- **Sentezlenmiş ses:** hıza göre tonu değişen motor döngüsü, çarpışma, whoosh, pickup, nitro, seviye fanfarı ve synthwave müzik döngüsü; hepsi `scripts/generate_audio.py` ile üretilir.
+- **Kontroller:** kaydırma, ekranın sağ/sol yarısına dokunma, klavye (←/→, A/D, Boşluk, P/Esc) veya isteğe bağlı **eğim (tilt) kontrolü**.
+- **Kalıcı en iyi skor ve mesafe**, ses / müzik / tilt anahtarları, duraklatma ve uygulama yaşam döngüsü yönetimi.
 
 ### Ekran Görüntüleri
 
 <table>
   <tr>
-    <td><img src="screenshot/1.png" alt="Ekran Görüntüsü 1" width="200"/></td>
-    <td><img src="screenshot/2.png" alt="Ekran Görüntüsü 2" width="200"/></td>
-    <td><img src="screenshot/3.png" alt="Ekran Görüntüsü 3" width="200"/></td>
+    <td><img src="screenshot/menu.png" alt="Menü" width="200"/></td>
+    <td><img src="screenshot/play.png" alt="Oynanış" width="200"/></td>
+    <td><img src="screenshot/over.png" alt="Oyun sonu" width="200"/></td>
+  </tr>
+  <tr>
+    <td align="center">Menü</td>
+    <td align="center">Oynanış</td>
+    <td align="center">Oyun sonu</td>
   </tr>
 </table>
 
+▶ [Oynanış videosunu izle (mp4)](screenshot/gameplay.mp4)
+
+### Nasıl Oynanır
+
+| Eylem | Dokunmatik | Klavye |
+| --- | --- | --- |
+| Şerit değiştir | Sola/sağa kaydır veya sol/sağ yarıya dokun | ← / → veya A / D |
+| Duraklat / devam | Duraklat düğmesi | P veya Esc |
+| Başlat / tekrar yarış | Düğme | Boşluk veya Enter |
+| Eğim kontrolü | Menüden aç, telefonu yatır | — |
+
+Skor mesafeyle artar. Yan şeritteki bir aracı geçmek **near miss** bonusu verir; ~2,5 sn içinde art arda near miss'ler kombo çarpanını büyütür. Çarpışma, Kalkan aktif değilse turu bitirir.
+
 ### Başlangıç
 
-Bu projeyi yerel olarak çalıştırmak için:
+Gereksinim: Flutter ≥ 3.44 (Dart ≥ 3.12).
 
-1. Flutter'ın yüklü olduğundan emin olun
-2. Bu depoyu klonlayın
-3. Bağımlılıkları yüklemek için `flutter pub get` komutunu çalıştırın
-4. Uygulamayı başlatmak için `flutter run` komutunu çalıştırın
+```bash
+git clone <bu depo>
+cd traffic_racer
+flutter pub get
+flutter run
+```
+
+Android ve iOS hedeflenir. Eğim kontrolü yalnızca gerçek mobil platformlarda görünür.
+
+### Proje Yapısı
+
+```
+lib/
+  core/        game_config (ayar sabitleri), projection (kamera matematiği), track (prosedürel döngüsel yol)
+  entities/    player, traffic_vehicle, power_up_pickup — Flame bileşeni değil, saf veri
+  game/        traffic_racer_game (durum makinesi + simülasyon), traffic_manager, score_keeper,
+               power_up_manager, hud_model
+  world/       world_component (tek çizim geçişi: gökyüzü → yol → derinlik sıralı sprite'lar → oyuncu → efektler),
+               sky_painter, vehicle_painter, world_palette, effects
+  services/    audio_service, settings_service, high_score_service, tilt_controller
+  overlays/    menü, HUD, duraklatma, oyun sonu (oyunun üstündeki Flutter widget'ları)
+scripts/       generate_audio.py — assets/audio içindeki tüm WAV'ları yeniden üretir
+test/          projeksiyon, pist, skor, trafik duvar-önleme, tam bir turun ekran dışı render'ı
+```
+
+### Geliştirme
+
+```bash
+flutter analyze
+flutter test                                          # 18 test; ~1500 karelik ekran dışı render dahil
+flutter run --dart-define=TTR_AUTOSTART=true          # yalnızca debug: hızlı QA görüntüsü için menüyü atlar
+python3 scripts/generate_audio.py                     # tüm sesleri yeniden üret (numpy gerekir)
+```
+
+Oynanış dengesi `lib/core/game_config.dart` içindedir (hızlar, şerit sayısı, spawn mesafeleri, güçlendirme süresi, kombo penceresi). Sesler üretilir, elle hazırlanmaz: WAV'ları değil betiği düzenleyin.
 
 ### Katkıda Bulunma
 
 Katkılarınızı bekliyoruz! Lütfen bir Pull Request göndermekten çekinmeyin.
-
