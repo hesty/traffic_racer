@@ -14,6 +14,8 @@ import '../core/track.dart';
 import '../entities/player.dart';
 import '../entities/power_up_pickup.dart';
 import '../entities/traffic_vehicle.dart';
+import '../progression/car_catalog.dart';
+import '../progression/run_stats.dart';
 import '../services/audio_service.dart';
 import '../services/high_score_service.dart';
 import '../services/settings_service.dart';
@@ -22,6 +24,7 @@ import '../world/effects.dart';
 import '../world/world_component.dart';
 import 'hud_model.dart';
 import 'power_up_manager.dart';
+import 'progression_coordinator.dart';
 import 'score_keeper.dart';
 import 'traffic_manager.dart';
 
@@ -34,6 +37,7 @@ class Overlays {
   static const hud = 'hud';
   static const pause = 'pause';
   static const gameOver = 'gameOver';
+  static const garage = 'garage';
 }
 
 /// Main game: owns the simulation state and drives the pseudo-3D world.
@@ -41,6 +45,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   TrafficRacerGame({
     required this.settings,
     required this.highScores,
+    required this.progression,
     math.Random? random,
   }) : _rng = random ?? math.Random(),
        audio = AudioService(
@@ -50,6 +55,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
   final SettingsService settings;
   final HighScoreService highScores;
+  final ProgressionCoordinator progression;
   final AudioService audio;
   final math.Random _rng;
 
@@ -89,6 +95,13 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   double _powerUpSpawnTimer = 0;
   double _hudTimer = 0;
   bool isNewRecord = false;
+  int _powerUpsCollected = 0;
+
+  /// What the last finished run earned; set in [_finishRun].
+  RunSummary? lastRunSummary;
+
+  /// Overlay to restore when the garage closes.
+  String _garageReturnOverlay = Overlays.menu;
 
   TiltController? _tilt;
 
@@ -100,6 +113,27 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   double get speedFraction => (speed / GameConfig.maxSpeed).clamp(0.0, 1.3);
   int get speedKmh => (speed / _unitsPerKmh).round();
   int get distanceMeters => (stats.distance / _unitsPerMeter).round();
+  double get _distanceMetersExact => stats.distance / _unitsPerMeter;
+
+  CarSkin get selectedSkin => progression.garage.selectedSkin;
+
+  /// Track z of the ghost car, or null when there is no ghost, it is out of
+  /// the visible range, or no run is in progress.
+  double? get ghostTrackZ {
+    // The ghost belongs to a run: it stays put through a pause or crash but
+    // must not ride along behind the menu or the result screen.
+    if (!progression.hasGhost ||
+        phase == GamePhase.menu ||
+        phase == GamePhase.gameOver) {
+      return null;
+    }
+    final gapMeters =
+        progression.ghostState.distanceMeters - _distanceMetersExact;
+    if (gapMeters.abs() > GameConfig.ghostVisibleMeters) return null;
+    return track.wrap(playerTrackZ + gapMeters * _unitsPerMeter);
+  }
+
+  int get ghostLane => progression.ghostState.lane;
 
   @override
   Color backgroundColor() => const Color(0xFF05071A);
@@ -153,11 +187,15 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     shake = 0;
     nitroVisual = 0;
     isNewRecord = false;
+    _powerUpsCollected = 0;
+    lastRunSummary = null;
     _powerUpSpawnTimer = GameConfig.powerUpSpawnInterval * 0.5;
+    progression.onRunStarted();
 
     phase = GamePhase.playing;
     overlays.remove(Overlays.menu);
     overlays.remove(Overlays.gameOver);
+    overlays.remove(Overlays.garage);
     overlays.add(Overlays.hud);
     audio.play(Sfx.start);
     audio.startEngine();
@@ -171,6 +209,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     if (phase != GamePhase.playing) return;
     phase = GamePhase.paused;
     overlays.add(Overlays.pause);
+    progression.onRunPaused();
     audio.pauseEngine();
     audio.pauseMusic();
     _tilt?.stop();
@@ -195,6 +234,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     phase = GamePhase.menu;
     overlays.remove(Overlays.pause);
     overlays.remove(Overlays.gameOver);
+    overlays.remove(Overlays.garage);
     overlays.remove(Overlays.hud);
     overlays.add(Overlays.menu);
     traffic.clear();
@@ -225,7 +265,31 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       score: stats.score,
       distanceMeters: distanceMeters,
     );
+    lastRunSummary =
+        progression.onRunFinished(_runStats(), isNewRecord: isNewRecord);
     overlays.add(Overlays.gameOver);
+  }
+
+  /// Shows the garage over the menu or the game-over screen.
+  void openGarage() {
+    if (phase != GamePhase.menu && phase != GamePhase.gameOver) return;
+    _garageReturnOverlay =
+        phase == GamePhase.gameOver ? Overlays.gameOver : Overlays.menu;
+    overlays.remove(_garageReturnOverlay);
+    overlays.add(Overlays.garage);
+  }
+
+  void closeGarage() {
+    if (!overlays.isActive(Overlays.garage)) return;
+    overlays.remove(Overlays.garage);
+    overlays.add(_garageReturnOverlay);
+  }
+
+  /// Buys a car from the garage; plays the unlock sound on success.
+  bool buyCar(String id) {
+    final ok = progression.garage.buy(id);
+    if (ok) audio.play(Sfx.unlock);
+    return ok;
   }
 
   /// Requests a lane change; -1 = left, 1 = right.
@@ -327,6 +391,11 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     position = track.wrap(position + dz);
     runTime += dt;
     player.update(dt);
+    progression.onRunTick(
+      runTime: runTime,
+      distanceMeters: _distanceMetersExact,
+      lane: player.lane,
+    );
 
     final playerZ = playerTrackZ;
     traffic.update(worldDt, playerZ: playerZ);
@@ -336,7 +405,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       avoidLane: runTime < GameConfig.startGraceSeconds ? player.lane : null,
     );
     skyOffset += track.segmentAt(position).curve * speedFraction * dt * 90;
-    dayPhase = (stats.distance / _unitsPerMeter / _dayCycleMeters) % 1;
+    dayPhase = (_distanceMetersExact / _dayCycleMeters) % 1;
 
     _resolveTraffic(playerZ);
     _updatePickups(dt, playerZ);
@@ -350,9 +419,52 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     _hudTimer -= dt;
     if (_hudTimer <= 0) {
       _hudTimer = 1 / 12;
-      _publishHud();
+      final snapshot = _runStats();
+      _evaluateProgress(snapshot);
+      _publishHud(snapshot);
     }
   }
+
+  RunStats _runStats() => RunStats(
+        distanceMeters: distanceMeters,
+        nearMisses: stats.nearMisses,
+        bestCombo: stats.bestCombo,
+        overtakes: stats.overtakes,
+        powerUpsCollected: _powerUpsCollected,
+        level: stats.level,
+        surviveSeconds: runTime.floor(),
+      );
+
+  /// Feeds the progression layer and announces what it unlocked.
+  void _evaluateProgress(RunStats snapshot) {
+    progression.onRunProgress(snapshot);
+    if (progression.justCompleted.isNotEmpty) {
+      audio.play(Sfx.mission);
+      for (final m in progression.justCompleted) {
+        _toast('MISSION DONE  +${m.coinReward}', _coinColor, size: 24);
+      }
+    }
+    if (progression.allBonusJustEarned) {
+      _toast('ALL MISSIONS  +${GameConfig.missionAllCompleteBonus}', _coinColor,
+          size: 28);
+    }
+    if (progression.ghostBeatenJustNow) {
+      audio.play(Sfx.ghost);
+      floatingTexts.add(FloatingText(
+        text: 'GHOST BEATEN',
+        color: ghostColor,
+        x: 0.5,
+        y: 0.42,
+        life: 1.6,
+        fontSize: 36,
+      ));
+    }
+  }
+
+  static const Color _coinColor = Color(0xFFFFC93C);
+
+  /// Tint shared by the ghost sprite and its HUD chip.
+  static const Color ghostColor = Color(0xFFBFE9FF);
 
   void _resolveTraffic(double playerZ) {
     final playerHalf = GameConfig.vehicleWidth / 2;
@@ -458,6 +570,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
   void _collect(PowerUpType type) {
     powerUps.activate(type);
+    _powerUpsCollected++;
     switch (type) {
       case PowerUpType.nitro:
         audio.play(Sfx.nitro);
@@ -523,7 +636,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     debris.removeWhere((d) => d.life <= 0);
   }
 
-  void _publishHud() {
+  void _publishHud([RunStats? snapshot]) {
     hud.publish(
       score: stats.score,
       level: stats.level,
@@ -537,6 +650,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
         for (final t in PowerUpType.values)
           if (powerUps.isActive(t)) t: powerUps.progress(t),
       },
+      coinsThisRun: progression.previewCoins(snapshot ?? _runStats()),
+      ghostGapMeters: progression.ghostGapMeters(_distanceMetersExact),
     );
   }
 
@@ -561,7 +676,10 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       togglePause();
     } else if (key == LogicalKeyboardKey.space ||
         key == LogicalKeyboardKey.enter) {
-      if (phase == GamePhase.menu || phase == GamePhase.gameOver) startRun();
+      if ((phase == GamePhase.menu || phase == GamePhase.gameOver) &&
+          !overlays.isActive(Overlays.garage)) {
+        startRun();
+      }
     } else {
       return KeyEventResult.ignored;
     }
