@@ -2,8 +2,10 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'game/progression_coordinator.dart';
 import 'game/traffic_racer_game.dart';
 import 'overlays/game_over_overlay.dart';
+import 'overlays/garage_overlay.dart';
 import 'overlays/hud_overlay.dart';
 import 'overlays/menu_overlay.dart';
 import 'overlays/pause_overlay.dart';
@@ -17,9 +19,14 @@ Future<void> main() async {
 
   final settings = SettingsService();
   final highScores = HighScoreService();
-  await Future.wait([settings.load(), highScores.load()]);
+  final progression = ProgressionCoordinator();
+  await Future.wait([settings.load(), highScores.load(), progression.load()]);
 
-  runApp(TurboTrafficRushApp(settings: settings, highScores: highScores));
+  runApp(TurboTrafficRushApp(
+    settings: settings,
+    highScores: highScores,
+    progression: progression,
+  ));
 }
 
 class TurboTrafficRushApp extends StatelessWidget {
@@ -27,10 +34,12 @@ class TurboTrafficRushApp extends StatelessWidget {
     super.key,
     required this.settings,
     required this.highScores,
+    required this.progression,
   });
 
   final SettingsService settings;
   final HighScoreService highScores;
+  final ProgressionCoordinator progression;
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +50,17 @@ class TurboTrafficRushApp extends StatelessWidget {
       home: Scaffold(
         backgroundColor: const Color(0xFF05071A),
         body: GameWidget<TrafficRacerGame>.controlled(
-          gameFactory: () =>
-              TrafficRacerGame(settings: settings, highScores: highScores),
+          gameFactory: () => TrafficRacerGame(
+            settings: settings,
+            highScores: highScores,
+            progression: progression,
+          ),
           overlayBuilderMap: {
             Overlays.menu: (_, game) => MenuOverlay(game: game),
             Overlays.hud: (_, game) => HudOverlay(game: game),
             Overlays.pause: (_, game) => PauseOverlay(game: game),
             Overlays.gameOver: (_, game) => GameOverOverlay(game: game),
+            Overlays.garage: (_, game) => GarageOverlay(game: game),
           },
         ),
       ),
