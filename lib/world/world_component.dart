@@ -198,7 +198,8 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
     }
     items.sort((a, b) => b.rel.compareTo(a.rel));
 
-    var playerDrawn = false;
+    // In the menu the road idles behind the title; no car is on it yet.
+    var playerDrawn = game.phase == GamePhase.menu;
     for (final item in items) {
       if (!playerDrawn && item.rel < 0) {
         _drawPlayer(canvas, w, h, cameraX, palette);
