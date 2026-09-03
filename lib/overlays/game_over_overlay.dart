@@ -1,148 +1,129 @@
 import 'package:flutter/material.dart';
+
 import '../game/traffic_racer_game.dart';
+import 'ui_theme.dart';
 
 class GameOverOverlay extends StatelessWidget {
-  final TrafficRacerGame game;
-
   const GameOverOverlay({super.key, required this.game});
+
+  final TrafficRacerGame game;
 
   @override
   Widget build(BuildContext context) {
+    final stats = game.stats;
     return Container(
-      color: Colors.black.withOpacity(0.8),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          margin: const EdgeInsets.symmetric(horizontal: 32),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white24, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Game Over text with gradient
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Colors.red, Colors.orange],
-                ).createShader(bounds),
-                child: const Text(
-                  'GAME OVER',
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+      color: const Color(0xBB05071A),
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.all(24),
+              decoration: UiTheme.panelDecoration(radius: 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (b) => const LinearGradient(
+                      colors: [Color(0xFFFF5252), UiTheme.accentDark],
+                    ).createShader(b),
+                    child: Text('WRECKED', style: UiTheme.title(40)),
                   ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              // Stats container
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: Column(
-                  children: [
-                    _buildStatRow(
-                      icon: Icons.stars,
-                      label: 'Score',
-                      value: '${game.score}',
-                      iconColor: Colors.amber,
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Divider(color: Colors.white24),
-                    ),
-                    _buildStatRow(
-                      icon: Icons.speed,
-                      label: 'Level',
-                      value: '${game.currentLevel}',
-                      iconColor: Colors.blue,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              // Play Again button
-              ElevatedButton(
-                onPressed: () {
-                  game.reset();
-                  game.overlays.remove('gameOver');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 8,
-                  shadowColor: Colors.black.withOpacity(0.5),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.replay, size: 24),
-                    SizedBox(width: 8),
-                    Text(
-                      'Play Again',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                  if (game.isNewRecord) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: UiTheme.accent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.emoji_events, size: 18, color: Colors.black),
+                          SizedBox(width: 6),
+                          Text('NEW HIGH SCORE',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.2)),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                  const SizedBox(height: 20),
+                  Text('${stats.score}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 56,
+                          fontWeight: FontWeight.w900,
+                          height: 1)),
+                  Text('SCORE', style: UiTheme.label),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        StatTile(
+                          icon: Icons.speed,
+                          label: 'Level',
+                          value: '${stats.level}',
+                          color: const Color(0xFF39C0FF),
+                        ),
+                        StatTile(
+                          icon: Icons.straighten,
+                          label: 'Distance',
+                          value: _distance(game.distanceMeters),
+                          color: const Color(0xFF66BB6A),
+                        ),
+                        StatTile(
+                          icon: Icons.bolt,
+                          label: 'Near miss',
+                          value: '${stats.nearMisses}',
+                          color: UiTheme.accent,
+                        ),
+                        StatTile(
+                          icon: Icons.whatshot,
+                          label: 'Best combo',
+                          value: 'x${stats.bestCombo}',
+                          color: UiTheme.accentDark,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ValueListenableBuilder<int>(
+                    valueListenable: game.highScores.bestScore,
+                    builder: (_, best, _) =>
+                        Text('BEST  $best', style: UiTheme.label),
+                  ),
+                  const SizedBox(height: 24),
+                  PrimaryButton(
+                    label: 'RACE AGAIN',
+                    icon: Icons.replay_rounded,
+                    onPressed: game.startRun,
+                  ),
+                  const SizedBox(height: 12),
+                  GhostButton(
+                    label: 'MAIN MENU',
+                    icon: Icons.home_rounded,
+                    onPressed: game.backToMenu,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color iconColor,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
+  static String _distance(int meters) =>
+      meters >= 1000 ? '${(meters / 1000).toStringAsFixed(1)} km' : '$meters m';
 }
