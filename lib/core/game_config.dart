@@ -52,6 +52,10 @@ class GameConfig {
   /// Minimum z gap between two traffic vehicles in the same lane.
   static const double sameLaneGap = segmentLength * 14;
 
+  /// Stretch of road (world units) within which traffic must leave at least
+  /// one lane open.
+  static const double blockWindow = segmentLength * 10;
+
   /// Base traffic density per level (vehicles alive at once).
   static int trafficCountForLevel(int level) => (5 + level).clamp(5, 14);
 

@@ -88,10 +88,11 @@ class TrafficManager {
 
   /// Guarantees at least one lane stays open across every stretch of road.
   bool _leavesAGap(double z, int lane) {
-    const window = GameConfig.segmentLength * 10;
     final blocked = <int>{lane};
     for (final v in vehicles) {
-      if (track.signedDistance(v.z, z).abs() < window) blocked.add(v.lane);
+      if (track.signedDistance(v.z, z).abs() < GameConfig.blockWindow) {
+        blocked.add(v.lane);
+      }
     }
     return blocked.length < GameConfig.laneCount;
   }
@@ -99,7 +100,9 @@ class TrafficManager {
   /// Moves traffic and drops anything far behind the player.
   void update(double dt, {required double playerZ}) {
     for (final v in vehicles) {
-      _followLeader(v);
+      _regulateSpeed(v, dt);
+    }
+    for (final v in vehicles) {
       v.z = track.wrap(v.z + v.speed * dt);
     }
     vehicles.removeWhere((v) {
@@ -108,24 +111,40 @@ class TrafficManager {
     });
   }
 
-  /// Simple car-following so vehicles never drive through each other.
-  void _followLeader(TrafficVehicle v) {
-    TrafficVehicle? leader;
-    var leaderGap = double.infinity;
-    for (final other in vehicles) {
-      if (identical(other, v) || other.lane != v.lane) continue;
-      final gap = track.signedDistance(v.z, other.z);
-      if (gap > 0 && gap < leaderGap) {
-        leader = other;
-        leaderGap = gap;
+  /// Car-following plus "wall" avoidance: a vehicle never drives into a
+  /// stretch where the other lanes are already occupied, so the player
+  /// always has a way through. When unobstructed it eases back to cruise.
+  void _regulateSpeed(TrafficVehicle v, double dt) {
+    double? cap;
+    for (final o in vehicles) {
+      if (identical(o, v)) continue;
+      final gap = track.signedDistance(v.z, o.z);
+      if (gap <= 0) continue;
+
+      if (o.lane == v.lane) {
+        if (gap < GameConfig.sameLaneGap * 0.6) cap = _min(cap, o.speed);
+        continue;
+      }
+      if (gap < GameConfig.blockWindow * 1.5) {
+        for (final p in vehicles) {
+          if (p.lane == v.lane || p.lane == o.lane) continue;
+          if (track.signedDistance(o.z, p.z).abs() < GameConfig.blockWindow) {
+            cap = _min(cap, math.min(o.speed, p.speed));
+          }
+        }
       }
     }
-    v.braking = false;
-    if (leader != null && leaderGap < GameConfig.sameLaneGap * 0.6) {
-      if (v.speed > leader.speed) {
-        v.speed = leader.speed;
-        v.braking = true;
+
+    if (cap != null && v.speed > cap) {
+      v.speed = cap;
+      v.braking = true;
+    } else {
+      v.braking = false;
+      if (cap == null) {
+        v.speed += (v.cruiseSpeed - v.speed) * math.min(1, dt * 0.4);
       }
     }
   }
+
+  static double _min(double? a, double b) => a == null ? b : math.min(a, b);
 }

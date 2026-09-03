@@ -32,7 +32,7 @@ class TrafficVehicle {
     required this.lane,
     required this.z,
     required this.speed,
-  });
+  }) : cruiseSpeed = speed;
 
   final VehicleKind kind;
   final Color color;
@@ -41,8 +41,11 @@ class TrafficVehicle {
   /// Track position (world units, wraps around the track length).
   double z;
 
-  /// Forward speed in world units per second.
+  /// Current forward speed in world units per second.
   double speed;
+
+  /// Speed the vehicle returns to when the road ahead is clear.
+  final double cruiseSpeed;
 
   /// True once the player has driven past this vehicle.
   bool passed = false;
