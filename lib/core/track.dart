@@ -90,11 +90,11 @@ class Track {
             curve: dir * (1.5 + rng.nextDouble() * 2.5), hill: 0);
       } else if (roll < 0.80) {
         builder.section(len ~/ 3, len ~/ 3, len ~/ 3,
-            curve: 0, hill: dir * (8 + rng.nextInt(16)));
+            curve: 0, hill: dir * (5 + rng.nextInt(10)));
       } else {
         builder.section(len ~/ 3, len ~/ 3, len ~/ 3,
             curve: dir * (1 + rng.nextDouble() * 2),
-            hill: -dir * (6 + rng.nextInt(12)));
+            hill: -dir * (4 + rng.nextInt(8)));
       }
     }
     // Return to level ground so the loop is seamless.
