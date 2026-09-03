@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -41,7 +43,10 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     required this.highScores,
     math.Random? random,
   })  : _rng = random ?? math.Random(),
-        audio = AudioService(settings.soundEnabled);
+        audio = AudioService(
+          soundEnabled: settings.soundEnabled,
+          musicEnabled: settings.musicEnabled,
+        );
 
   final SettingsService settings;
   final HighScoreService highScores;
@@ -110,9 +115,17 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     await add(scene);
     await add(_InputLayer());
 
-    await audio.preload();
+    // Not awaited: the menu should appear immediately; sounds simply start
+    // working once the cache is warm.
+    unawaited(audio.preload());
     overlays.add(Overlays.menu);
+    if (_autoStartRequested) startRun();
   }
+
+  /// Debug-only QA hook: `flutter run --dart-define=TTR_AUTOSTART=1` skips
+  /// the menu so a run can be screenshotted without any input.
+  static bool get _autoStartRequested =>
+      kDebugMode && const bool.fromEnvironment('TTR_AUTOSTART');
 
   @override
   void onGameResize(Vector2 size) {
@@ -146,7 +159,10 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     overlays.remove(Overlays.menu);
     overlays.remove(Overlays.gameOver);
     overlays.add(Overlays.hud);
+    audio.play(Sfx.start);
     audio.startEngine();
+    audio.startMusic();
+    audio.duckMusic(false);
     _syncTilt();
     _publishHud();
   }
@@ -156,6 +172,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     phase = GamePhase.paused;
     overlays.add(Overlays.pause);
     audio.pauseEngine();
+    audio.pauseMusic();
     _tilt?.stop();
   }
 
@@ -164,6 +181,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     phase = GamePhase.playing;
     overlays.remove(Overlays.pause);
     audio.resumeEngine();
+    audio.resumeMusic();
     _syncTilt();
   }
 
@@ -185,6 +203,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     floatingTexts.clear();
     powerUps.clear();
     audio.stopEngine();
+    audio.stopMusic();
     _tilt?.stop();
   }
 
@@ -194,6 +213,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     shake = 18;
     audio.play(Sfx.crash);
     audio.stopEngine();
+    audio.duckMusic(true);
     _tilt?.stop();
     overlays.remove(Overlays.hud);
     _spawnDebris(count: 34);
@@ -240,7 +260,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   @override
   void onRemove() {
     _tilt?.stop();
-    audio.stopEngine();
+    audio.dispose();
     super.onRemove();
   }
 
@@ -315,7 +335,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       _onLevelUp();
     }
     stats.tick(dt);
-    audio.setEngineRate(0.65 + speedFraction * 1.1);
+    audio.updateEngine(speedFraction);
 
     _hudTimer -= dt;
     if (_hudTimer <= 0) {
