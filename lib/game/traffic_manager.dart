@@ -87,10 +87,12 @@ class TrafficManager {
   }
 
   /// Guarantees at least one lane stays open across every stretch of road.
+  /// Uses a doubled window so the new vehicle cannot complete a wall for
+  /// anyone already nearby.
   bool _leavesAGap(double z, int lane) {
     final blocked = <int>{lane};
     for (final v in vehicles) {
-      if (track.signedDistance(v.z, z).abs() < GameConfig.blockWindow) {
+      if (track.signedDistance(v.z, z).abs() < GameConfig.blockWindow * 2) {
         blocked.add(v.lane);
       }
     }
@@ -111,28 +113,45 @@ class TrafficManager {
     });
   }
 
-  /// Car-following plus "wall" avoidance: a vehicle never drives into a
-  /// stretch where the other lanes are already occupied, so the player
-  /// always has a way through. When unobstructed it eases back to cruise.
+  /// Car-following plus "wall" avoidance so the player always has a way
+  /// through. A vehicle brakes (to the slowest vehicle ahead) when either:
+  ///  * two vehicles ahead in the other lanes already sit within a window of
+  ///    each other (a pair it must not join), or
+  ///  * every other lane has traffic beside or ahead of it in the approach
+  ///    range, so pressing on would line all lanes up.
+  /// When unobstructed it eases back to its cruise speed.
   void _regulateSpeed(TrafficVehicle v, double dt) {
+    const window = GameConfig.blockWindow;
+    const approach = window * 1.5;
     double? cap;
+    final nearLanes = <int>{};
+    double? slowestAhead;
+
     for (final o in vehicles) {
       if (identical(o, v)) continue;
       final gap = track.signedDistance(v.z, o.z);
-      if (gap <= 0) continue;
 
       if (o.lane == v.lane) {
-        if (gap < GameConfig.sameLaneGap * 0.6) cap = _min(cap, o.speed);
+        if (gap > 0 && gap < GameConfig.sameLaneGap * 0.6) {
+          cap = _min(cap, o.speed);
+        }
         continue;
       }
-      if (gap < GameConfig.blockWindow * 1.5) {
-        for (final p in vehicles) {
-          if (p.lane == v.lane || p.lane == o.lane) continue;
-          if (track.signedDistance(o.z, p.z).abs() < GameConfig.blockWindow) {
-            cap = _min(cap, math.min(o.speed, p.speed));
-          }
+      if (gap.abs() >= approach) continue;
+      nearLanes.add(o.lane);
+      if (gap <= 0) continue;
+      slowestAhead = _min(slowestAhead, o.speed);
+
+      // Pair ahead: another lane occupied within a window of [o].
+      for (final p in vehicles) {
+        if (p.lane == v.lane || p.lane == o.lane) continue;
+        if (track.signedDistance(o.z, p.z).abs() < window) {
+          cap = _min(cap, math.min(o.speed, p.speed));
         }
       }
+    }
+    if (nearLanes.length >= GameConfig.laneCount - 1 && slowestAhead != null) {
+      cap = _min(cap, slowestAhead);
     }
 
     if (cap != null && v.speed > cap) {
