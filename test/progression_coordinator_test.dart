@@ -31,67 +31,30 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('a run pays coins, records a ghost on a record and persists', () async {
+  test('a run pays coins and persists', () async {
     final p = ProgressionCoordinator(now: now);
     await p.load();
     expect(p.missions.missions.length, GameConfig.missionsPerDay);
-    expect(p.hasGhost, isFalse);
 
     p.onRunStarted();
     expect(p.streak.streak.value.count, 1);
-    for (var i = 0; i <= 120; i++) {
-      p.onRunTick(runTime: i * 0.5, distanceMeters: i * 20.0, lane: 1);
-    }
     p.onRunProgress(snapshot(distance: 2400, nearMisses: 5, seconds: 60));
-    final summary = p.onRunFinished(
-        snapshot(distance: 2400, nearMisses: 5, seconds: 60),
-        isNewRecord: true);
+    final summary =
+        p.onRunFinished(snapshot(distance: 2400, nearMisses: 5, seconds: 60));
 
     expect(summary.runCoins,
         (2400 * GameConfig.coinsPerMeter).round() + 5 * GameConfig.coinsPerNearMiss);
     expect(p.garage.coins, summary.totalCoins);
-    expect(p.ghosts.best.value, isNotNull);
-    expect(p.ghosts.best.value!.finalDistanceMeters, 2400);
 
     // Everything survives a reload from the same prefs.
     final again = ProgressionCoordinator(now: now);
     await again.load();
     expect(again.garage.coins, p.garage.coins);
-    expect(again.ghosts.best.value!.samples.length,
-        p.ghosts.best.value!.samples.length);
     expect(again.streak.streak.value.count, 1);
     expect(
       [for (final m in again.missions.missions) m.progress],
       [for (final m in p.missions.missions) m.progress],
     );
-  });
-
-  test('beating the ghost fires once and pays the bonus', () async {
-    final p = ProgressionCoordinator(now: now);
-    await p.load();
-    p.onRunStarted();
-    p.onRunTick(runTime: 0, distanceMeters: 0, lane: 1);
-    p.onRunTick(runTime: 10, distanceMeters: 500, lane: 1);
-    p.onRunFinished(snapshot(distance: 500), isNewRecord: true);
-
-    p.onRunStarted();
-    expect(p.hasGhost, isTrue);
-    p.onRunTick(runTime: 5, distanceMeters: 300, lane: 0);
-    expect(p.ghostGapMeters(300), closeTo(50, 1));
-    p.onRunProgress(snapshot(distance: 300));
-    expect(p.ghostBeaten, isFalse);
-    p.onRunProgress(snapshot(distance: 501));
-    expect(p.ghostBeatenJustNow, isTrue);
-    p.onRunProgress(snapshot(distance: 600));
-    expect(p.ghostBeatenJustNow, isFalse);
-    expect(p.ghostBeaten, isTrue);
-
-    final summary = p.onRunFinished(snapshot(distance: 600), isNewRecord: false);
-    expect(summary.ghostBeaten, isTrue);
-    expect(summary.runCoins,
-        (600 * GameConfig.coinsPerMeter).round() + GameConfig.ghostBeatenBonus);
-    // Not a record: the old ghost stays.
-    expect(p.ghosts.best.value!.finalDistanceMeters, 500);
   });
 
   test('missions pay on completion and the all-done bonus once', () async {
@@ -120,7 +83,7 @@ void main() {
     expect(p.justCompleted, isEmpty);
     expect(p.allBonusJustEarned, isFalse);
 
-    final summary = p.onRunFinished(huge, isNewRecord: true);
+    final summary = p.onRunFinished(huge);
     expect(summary.missionsCompleted.length, GameConfig.missionsPerDay);
     expect(summary.allMissionsBonus, isTrue);
     expect(summary.missionCoins, rewards + GameConfig.missionAllCompleteBonus);

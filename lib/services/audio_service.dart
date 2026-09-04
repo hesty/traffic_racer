@@ -1,7 +1,7 @@
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/foundation.dart';
 
-enum Sfx { crash, pickup, whoosh, nitro, levelUp, shield, lane, start, mission, ghost, unlock }
+enum Sfx { crash, pickup, whoosh, nitro, levelUp, shield, lane, start, mission, unlock }
 
 extension on Sfx {
   String get file => switch (this) {
@@ -14,7 +14,6 @@ extension on Sfx {
         Sfx.lane => 'lane.wav',
         Sfx.start => 'start.wav',
         Sfx.mission => 'mission.wav',
-        Sfx.ghost => 'ghost.wav',
         Sfx.unlock => 'unlock.wav',
       };
 }

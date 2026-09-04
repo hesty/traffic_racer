@@ -202,14 +202,6 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
       if (seg.frame != _frame) continue;
       items.add(_SpriteRef(track.signedDistance(playerZ, p.z), pickup: p, seg: seg));
     }
-    final ghostZ = game.ghostTrackZ;
-    if (ghostZ != null) {
-      final seg = track.segmentAt(ghostZ);
-      final rel = track.signedDistance(playerZ, ghostZ);
-      if (seg.frame == _frame && rel >= behindLimit) {
-        items.add(_SpriteRef(rel, ghostZ: ghostZ, seg: seg));
-      }
-    }
     items.sort((a, b) => b.rel.compareTo(a.rel));
 
     // Behind the menu and result screens the road is just a backdrop.
@@ -228,12 +220,12 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
   void _drawSprite(Canvas canvas, _SpriteRef item, Track track,
       WorldPalette palette, double w, double h) {
     final seg = item.seg;
-    final z = item.vehicle?.z ?? item.pickup?.z ?? item.ghostZ!;
+    final z = item.vehicle?.z ?? item.pickup!.z;
     final t = ((track.wrap(z) - seg.z1) / GameConfig.segmentLength).clamp(0.0, 1.0);
     final scale = lerp(seg.p1.scale, seg.p2.scale, t);
     final baseX = lerp(seg.p1.x, seg.p2.x, t);
     final baseY = lerp(seg.p1.y, seg.p2.y, t);
-    final lane = item.vehicle?.lane ?? item.pickup?.lane ?? game.ghostLane;
+    final lane = item.vehicle?.lane ?? item.pickup!.lane;
     final sx = baseX +
         scale * GameConfig.laneCenter(lane) * GameConfig.roadWidth * w / 2;
 
@@ -253,34 +245,10 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
           color: v.color,
           braking: v.braking,
           lightsAlpha: palette.headlightAlpha);
-    } else if (item.pickup != null) {
+    } else {
       _drawPickup(canvas, item.pickup!, Offset(sx, baseY),
           scale * GameConfig.vehicleWidth * GameConfig.roadWidth * w / 2);
-    } else {
-      _drawGhost(canvas, Offset(sx, baseY),
-          scale * GameConfig.vehicleWidth * GameConfig.roadWidth * w / 2);
     }
-    canvas.restore();
-  }
-
-  /// The best run's pace car: a fixed silhouette painted through a
-  /// translucent layer so the whole car fades uniformly.
-  void _drawGhost(Canvas canvas, Offset bottomCenter, double width) {
-    if (width < 1.5) return;
-    final bounds = Rect.fromCenter(
-        center: bottomCenter.translate(0, -width * 0.5),
-        width: width * 2.4,
-        height: width * 2.4);
-    canvas.saveLayer(
-        bounds,
-        Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: GameConfig.ghostAlpha));
-    VehiclePainter.draw(canvas,
-        bottomCenter: bottomCenter,
-        width: width,
-        kind: VehicleKind.sedan,
-        color: TrafficRacerGame.ghostColor,
-        lightsAlpha: 0);
     canvas.restore();
   }
 
@@ -477,14 +445,10 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
 }
 
 class _SpriteRef {
-  _SpriteRef(this.rel,
-      {this.vehicle, this.pickup, this.ghostZ, required this.seg});
+  _SpriteRef(this.rel, {this.vehicle, this.pickup, required this.seg});
 
   final double rel;
   final TrafficVehicle? vehicle;
   final PowerUpPickup? pickup;
-
-  /// Track z of the ghost car when this entry is the ghost.
-  final double? ghostZ;
   final Segment seg;
 }

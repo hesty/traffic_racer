@@ -324,19 +324,6 @@ def mission_complete():
     write("mission.wav", reverb(out, mix=0.3), gain=0.85)
 
 
-def ghost_beaten():
-    """Rising whoosh into a bright chord: you just passed your best self."""
-    x = t(1.0)
-    rush = svf(RNG.normal(0, 1, x.size), 500 + 4000 * (x / x[-1]) ** 2, q=1.8, mode="bp")
-    rush *= adsr(x.size, a=0.05, d=0.1, s=0.8, r=0.45) * 0.6
-    chord = np.zeros(x.size)
-    for i, f in enumerate([523.25, 659.25, 783.99, 1046.5]):
-        b = bell(f, 0.8)
-        s = int(SR * (0.3 + i * 0.04))
-        chord[s:s + min(b.size, x.size - s)] += b[:x.size - s] * 0.8
-    write("ghost.wav", reverb(rush + chord, tail=0.3, mix=0.35), gain=0.85)
-
-
 def unlock():
     """Mechanical latch click followed by a short shimmer: a new car."""
     x = t(0.6)
@@ -354,7 +341,7 @@ def unlock():
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     for fn in (engine, crash, pickup, whoosh, nitro, level_up, shield, lane_change, start_rev, music,
-               mission_complete, ghost_beaten, unlock):
+               mission_complete, unlock):
         fn()
         print("ok", fn.__name__)
     print("generated:", sorted(os.listdir(OUT)))

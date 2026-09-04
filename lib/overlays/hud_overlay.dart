@@ -38,15 +38,6 @@ class HudOverlay extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    if (hud.ghostGapMeters case final gap?)
-                      InfoChip(
-                        icon: Icons.flag_rounded,
-                        text: 'GHOST ${gap >= 0 ? '+' : ''}$gap m',
-                        color: gap >= 0
-                            ? TrafficRacerGame.ghostColor
-                            : UiTheme.accentDark,
-                        fontSize: 13,
-                      ),
                     const Spacer(),
                     InfoChip(
                       icon: Icons.monetization_on_rounded,
