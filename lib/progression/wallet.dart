@@ -21,12 +21,11 @@ class CoinFormula {
   static int forRun({
     required int distanceMeters,
     required int nearMisses,
-    required bool ghostBeaten,
     required double streakMultiplier,
+    double passMultiplier = 1,
   }) {
     final base = (distanceMeters * GameConfig.coinsPerMeter).round() +
-        nearMisses * GameConfig.coinsPerNearMiss +
-        (ghostBeaten ? GameConfig.ghostBeatenBonus : 0);
-    return (base * streakMultiplier).round();
+        nearMisses * GameConfig.coinsPerNearMiss;
+    return (base * streakMultiplier * passMultiplier).round();
   }
 }

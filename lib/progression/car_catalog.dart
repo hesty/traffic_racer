@@ -10,19 +10,26 @@ class CarSkin {
     required this.color,
     required this.label,
     required this.price,
+    this.premium = false,
   });
 
   final String id;
   final VehicleKind kind;
   final Color color;
   final String label;
+
+  /// Coin price. Always 0 for a [premium] car, which coins cannot buy at all.
   final int price;
+
+  /// Locked behind the Turbo Pass entitlement rather than behind coins.
+  final bool premium;
 
   String get name => '$label ${kind.name}'.toUpperCase();
 }
 
-/// Every car the garage can sell. The first entry is the free default and
-/// matches the original hardcoded player car.
+/// Every car the garage can show. The first entry is the free default and
+/// matches the original hardcoded player car; the [premium] entries only ride
+/// while the Turbo Pass is active.
 class CarCatalog {
   CarCatalog._();
 
@@ -39,7 +46,16 @@ class CarCatalog {
     CarSkin(id: 'hatchback_cyan', kind: VehicleKind.hatchback, color: Color(0xFF00ACC1), label: 'Cyan', price: 650),
     CarSkin(id: 'sedan_black', kind: VehicleKind.sedan, color: Color(0xFF37474F), label: 'Shadow', price: 800),
     CarSkin(id: 'van_pink', kind: VehicleKind.van, color: Color(0xFFEC407A), label: 'Neon', price: 1000),
+    // Turbo Pass exclusives; coins never unlock these.
+    CarSkin(id: 'pass_bullion', kind: VehicleKind.sedan, color: Color(0xFFFFC400), label: 'Bullion', price: 0, premium: true),
+    CarSkin(id: 'pass_chrome', kind: VehicleKind.suv, color: Color(0xFFB0BEC5), label: 'Chrome', price: 0, premium: true),
+    CarSkin(id: 'pass_carbon', kind: VehicleKind.van, color: Color(0xFF263238), label: 'Carbon', price: 0, premium: true),
+    CarSkin(id: 'pass_aurora', kind: VehicleKind.hatchback, color: Color(0xFF00E5A0), label: 'Aurora', price: 0, premium: true),
   ];
+
+  /// The pass-only cars, in catalogue order. The paywall previews these.
+  static List<CarSkin> get premium =>
+      [for (final skin in all) if (skin.premium) skin];
 
   static CarSkin byId(String id) =>
       all.firstWhere((s) => s.id == id, orElse: () => all.first);

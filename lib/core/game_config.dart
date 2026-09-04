@@ -85,16 +85,20 @@ class GameConfig {
   // --- Progression: coins & streak ---------------------------------------
   static const double coinsPerMeter = 0.05;
   static const int coinsPerNearMiss = 2;
-  static const int ghostBeatenBonus = 40;
 
   /// Extra coin fraction per consecutive day played, capped at [streakBonusCap].
   static const double streakBonusPerDay = 0.1;
   static const double streakBonusCap = 0.5;
 
-  // --- Progression: ghost -----------------------------------------------
-  static const double ghostSampleInterval = 0.5;
-  static const double ghostAlpha = 0.42;
+  // --- Monetisation: Turbo Pass -----------------------------------------
+  /// RevenueCat entitlement that unlocks the pass.
+  static const String passEntitlement = 'pass';
 
-  /// The ghost sprite is only placed on the track within this gap (metres).
-  static const double ghostVisibleMeters = 300;
+  /// Coin multiplier the pass grants, stacked on top of the streak bonus.
+  /// 1.0 keeps the pass purely cosmetic; raise it if the pass needs to pull
+  /// its weight in the economy rather than only in the garage.
+  static const double passCoinMultiplier = 1.0;
+
+  /// Completed runs before the paywall shows itself once, unprompted.
+  static const int paywallAutoPromptAfterRuns = 3;
 }

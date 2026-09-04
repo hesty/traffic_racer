@@ -15,15 +15,12 @@ void main() {
   });
 
   group('CoinFormula', () {
-    test('pays for distance, near misses and the ghost', () {
+    test('pays for distance and near misses', () {
       final base = CoinFormula.forRun(
-          distanceMeters: 2000, nearMisses: 10, ghostBeaten: false, streakMultiplier: 1);
+          distanceMeters: 2000, nearMisses: 10, streakMultiplier: 1);
       expect(base, (2000 * GameConfig.coinsPerMeter).round() + 10 * GameConfig.coinsPerNearMiss);
-      final beaten = CoinFormula.forRun(
-          distanceMeters: 2000, nearMisses: 10, ghostBeaten: true, streakMultiplier: 1);
-      expect(beaten - base, GameConfig.ghostBeatenBonus);
       final streaked = CoinFormula.forRun(
-          distanceMeters: 2000, nearMisses: 10, ghostBeaten: false, streakMultiplier: 1.5);
+          distanceMeters: 2000, nearMisses: 10, streakMultiplier: 1.5);
       expect(streaked, (base * 1.5).round());
     });
   });
@@ -51,8 +48,8 @@ void main() {
       expect(g.buy(car.id, const Wallet(9999)), isNull);
       expect(g.buy('nope', const Wallet(9999)), isNull);
 
-      expect(g.select(CarCatalog.all[2].id), isFalse);
-      expect(g.select(CarCatalog.defaultId), isTrue);
+      expect(g.select(CarCatalog.all[2].id, passActive: false), isFalse);
+      expect(g.select(CarCatalog.defaultId, passActive: false), isTrue);
     });
 
     test('json keeps a locked selection from sneaking in', () {
@@ -68,8 +65,13 @@ void main() {
       final ids = CarCatalog.all.map((c) => c.id).toSet();
       expect(ids.length, CarCatalog.all.length);
       expect(CarCatalog.all.first.price, 0);
-      for (var i = 1; i < CarCatalog.all.length; i++) {
-        expect(CarCatalog.all[i].price, greaterThanOrEqualTo(CarCatalog.all[i - 1].price));
+      final coinCars = [for (final c in CarCatalog.all) if (!c.premium) c];
+      for (var i = 1; i < coinCars.length; i++) {
+        expect(coinCars[i].price, greaterThanOrEqualTo(coinCars[i - 1].price));
+      }
+      // Pass cars are never priced in coins.
+      for (final car in CarCatalog.premium) {
+        expect(car.price, 0);
       }
     });
   });
