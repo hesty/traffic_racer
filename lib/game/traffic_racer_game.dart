@@ -38,6 +38,7 @@ class Overlays {
   static const pause = 'pause';
   static const gameOver = 'gameOver';
   static const garage = 'garage';
+  static const paywall = 'paywall';
 }
 
 /// Main game: owns the simulation state and drives the pseudo-3D world.
@@ -103,6 +104,10 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   /// Overlay to restore when the garage closes.
   String _garageReturnOverlay = Overlays.menu;
 
+  /// Overlay to restore when the paywall closes. Unlike the garage the
+  /// paywall can also be opened from the garage itself.
+  String _paywallReturnOverlay = Overlays.menu;
+
   TiltController? _tilt;
 
   static const double _unitsPerKmh = 40;
@@ -116,24 +121,6 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   double get _distanceMetersExact => stats.distance / _unitsPerMeter;
 
   CarSkin get selectedSkin => progression.garage.selectedSkin;
-
-  /// Track z of the ghost car, or null when there is no ghost, it is out of
-  /// the visible range, or no run is in progress.
-  double? get ghostTrackZ {
-    // The ghost belongs to a run: it stays put through a pause or crash but
-    // must not ride along behind the menu or the result screen.
-    if (!progression.hasGhost ||
-        phase == GamePhase.menu ||
-        phase == GamePhase.gameOver) {
-      return null;
-    }
-    final gapMeters =
-        progression.ghostState.distanceMeters - _distanceMetersExact;
-    if (gapMeters.abs() > GameConfig.ghostVisibleMeters) return null;
-    return track.wrap(playerTrackZ + gapMeters * _unitsPerMeter);
-  }
-
-  int get ghostLane => progression.ghostState.lane;
 
   @override
   Color backgroundColor() => const Color(0xFF05071A);
@@ -196,6 +183,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     overlays.remove(Overlays.menu);
     overlays.remove(Overlays.gameOver);
     overlays.remove(Overlays.garage);
+    overlays.remove(Overlays.paywall);
     overlays.add(Overlays.hud);
     audio.play(Sfx.start);
     audio.startEngine();
@@ -235,6 +223,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     overlays.remove(Overlays.pause);
     overlays.remove(Overlays.gameOver);
     overlays.remove(Overlays.garage);
+    overlays.remove(Overlays.paywall);
     overlays.remove(Overlays.hud);
     overlays.add(Overlays.menu);
     traffic.clear();
@@ -265,9 +254,10 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       score: stats.score,
       distanceMeters: distanceMeters,
     );
-    lastRunSummary =
-        progression.onRunFinished(_runStats(), isNewRecord: isNewRecord);
+    lastRunSummary = progression.onRunFinished(_runStats());
     overlays.add(Overlays.gameOver);
+    // The one unprompted paywall of this install, layered over the result.
+    if (progression.paywallDue) openPaywall();
   }
 
   /// Shows the garage over the menu or the game-over screen.
@@ -285,11 +275,52 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     overlays.add(_garageReturnOverlay);
   }
 
+  /// Shows the Turbo Pass paywall over the menu, the result screen or the
+  /// garage, and remembers which one to put back.
+  void openPaywall() {
+    if (phase != GamePhase.menu && phase != GamePhase.gameOver) return;
+    if (overlays.isActive(Overlays.paywall)) return;
+    _paywallReturnOverlay = overlays.isActive(Overlays.garage)
+        ? Overlays.garage
+        : phase == GamePhase.gameOver
+            ? Overlays.gameOver
+            : Overlays.menu;
+    overlays.remove(_paywallReturnOverlay);
+    overlays.add(Overlays.paywall);
+  }
+
+  void closePaywall() {
+    if (!overlays.isActive(Overlays.paywall)) return;
+    progression.purchases.clearError();
+    overlays.remove(Overlays.paywall);
+    overlays.add(_paywallReturnOverlay);
+  }
+
   /// Buys a car from the garage; plays the unlock sound on success.
   bool buyCar(String id) {
     final ok = progression.garage.buy(id);
     if (ok) audio.play(Sfx.unlock);
     return ok;
+  }
+
+  /// Buys a Turbo Pass plan. Closes the paywall once the pass is active; a
+  /// cancelled or failed purchase leaves it open with its error line.
+  Future<bool> buyPass(String offerId) async {
+    final ok = await progression.purchases.purchase(offerId);
+    if (ok) _passUnlocked();
+    return ok;
+  }
+
+  /// Restores a pass bought before a reinstall or on another device.
+  Future<bool> restorePass() async {
+    final ok = await progression.purchases.restore();
+    if (ok) _passUnlocked();
+    return ok;
+  }
+
+  void _passUnlocked() {
+    audio.play(Sfx.unlock);
+    closePaywall();
   }
 
   /// Requests a lane change; -1 = left, 1 = right.
@@ -391,11 +422,6 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     position = track.wrap(position + dz);
     runTime += dt;
     player.update(dt);
-    progression.onRunTick(
-      runTime: runTime,
-      distanceMeters: _distanceMetersExact,
-      lane: player.lane,
-    );
 
     final playerZ = playerTrackZ;
     traffic.update(worldDt, playerZ: playerZ);
@@ -448,23 +474,9 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       _toast('ALL MISSIONS  +${GameConfig.missionAllCompleteBonus}', _coinColor,
           size: 28);
     }
-    if (progression.ghostBeatenJustNow) {
-      audio.play(Sfx.ghost);
-      floatingTexts.add(FloatingText(
-        text: 'GHOST BEATEN',
-        color: ghostColor,
-        x: 0.5,
-        y: 0.42,
-        life: 1.6,
-        fontSize: 36,
-      ));
-    }
   }
 
   static const Color _coinColor = Color(0xFFFFC93C);
-
-  /// Tint shared by the ghost sprite and its HUD chip.
-  static const Color ghostColor = Color(0xFFBFE9FF);
 
   void _resolveTraffic(double playerZ) {
     final playerHalf = GameConfig.vehicleWidth / 2;
@@ -651,7 +663,6 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
           if (powerUps.isActive(t)) t: powerUps.progress(t),
       },
       coinsThisRun: progression.previewCoins(snapshot ?? _runStats()),
-      ghostGapMeters: progression.ghostGapMeters(_distanceMetersExact),
     );
   }
 

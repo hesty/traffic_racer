@@ -9,6 +9,7 @@ import 'overlays/garage_overlay.dart';
 import 'overlays/hud_overlay.dart';
 import 'overlays/menu_overlay.dart';
 import 'overlays/pause_overlay.dart';
+import 'overlays/paywall_overlay.dart';
 import 'services/high_score_service.dart';
 import 'services/settings_service.dart';
 
@@ -61,6 +62,7 @@ class TurboTrafficRushApp extends StatelessWidget {
             Overlays.pause: (_, game) => PauseOverlay(game: game),
             Overlays.gameOver: (_, game) => GameOverOverlay(game: game),
             Overlays.garage: (_, game) => GarageOverlay(game: game),
+            Overlays.paywall: (_, game) => PaywallOverlay(game: game),
           },
         ),
       ),
