@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../progression/car_catalog.dart';
+
 /// Shared styling for the Flutter overlays drawn above the game.
 class UiTheme {
   UiTheme._();
@@ -7,6 +9,11 @@ class UiTheme {
   static const accent = Color(0xFFF2D21B);
   static const accentDark = Color(0xFFFF7A29);
   static const coin = Color(0xFFFFC93C);
+
+  /// Turbo Pass violet, deliberately away from the amber the coin economy
+  /// owns so a paid unlock never reads as something coins could buy.
+  static const pass = Color(0xFF9B6BFF);
+  static const passDark = Color(0xFF5B2BE0);
   static const panel = Color(0xCC0B1024);
   static const panelBorder = Color(0x33FFFFFF);
 
@@ -122,7 +129,10 @@ class PrimaryButton extends StatelessWidget {
 
   final String label;
   final IconData icon;
-  final VoidCallback onPressed;
+
+  /// Null disables the button, which the paywall uses while a purchase is in
+  /// flight or before the store has answered.
+  final VoidCallback? onPressed;
   final Color color;
   final Color foreground;
 
@@ -151,11 +161,15 @@ class GhostButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onPressed,
+    this.color,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
+
+  /// Tints the label and the outline; null keeps the plain white button.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -165,10 +179,57 @@ class GhostButton extends StatelessWidget {
       label: Text(label,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 1)),
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white,
-        side: const BorderSide(color: Colors.white38),
+        foregroundColor: color ?? Colors.white,
+        side: BorderSide(
+          color: color?.withValues(alpha: 0.6) ?? Colors.white38,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+      ),
+    );
+  }
+}
+
+/// Slim call to action for the Turbo Pass, used where a third full-width
+/// button would crowd the screen.
+class PassBanner extends StatelessWidget {
+  const PassBanner({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: UiTheme.pass.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: UiTheme.pass.withValues(alpha: 0.55)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.workspace_premium_rounded,
+                  size: 18, color: UiTheme.pass),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'TURBO PASS  ·  ${CarCatalog.premium.length} EXCLUSIVE CARS',
+                  overflow: TextOverflow.ellipsis,
+                  style: UiTheme.label.copyWith(color: Colors.white, fontSize: 12),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 18, color: UiTheme.pass),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -94,6 +94,23 @@ class _MenuBody extends StatelessWidget {
           icon: Icons.garage_rounded,
           onPressed: game.openGarage,
         ),
+        const SizedBox(height: 10),
+        ListenableBuilder(
+          listenable: progression.purchases,
+          builder: (_, _) => progression.purchases.isActive
+              ? const InfoChip(
+                  icon: Icons.workspace_premium_rounded,
+                  text: 'TURBO PASS ACTIVE',
+                  color: UiTheme.pass,
+                  fontSize: 13,
+                )
+              : GhostButton(
+                  label: 'TURBO PASS',
+                  icon: Icons.workspace_premium_rounded,
+                  color: UiTheme.pass,
+                  onPressed: game.openPaywall,
+                ),
+        ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

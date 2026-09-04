@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../entities/traffic_vehicle.dart';
 import '../game/traffic_racer_game.dart';
 import '../progression/car_catalog.dart';
-import '../world/vehicle_painter.dart';
+import 'car_preview.dart';
 import 'ui_theme.dart';
 
 /// Buy and pick the player's car. Shown over the menu or the result screen.
+///
+/// Coin cars are bought outright; pass-only cars are never bought here at all,
+/// they send the player to the paywall and unlock themselves once the Turbo
+/// Pass is active.
 class GarageOverlay extends StatelessWidget {
   const GarageOverlay({super.key, required this.game});
 
@@ -21,7 +24,7 @@ class GarageOverlay extends StatelessWidget {
       color: const Color(0xEE05071A),
       child: SafeArea(
         child: ListenableBuilder(
-          listenable: garage,
+          listenable: Listenable.merge([garage, game.progression.purchases]),
           builder: (context, _) => Column(
             children: [
               Padding(
@@ -60,14 +63,17 @@ class GarageOverlay extends StatelessWidget {
                   itemCount: CarCatalog.all.length,
                   itemBuilder: (context, i) {
                     final skin = CarCatalog.all[i];
+                    final drivable = garage.canDrive(skin.id);
                     return _CarTile(
                       skin: skin,
-                      owned: garage.garage.isUnlocked(skin.id),
+                      drivable: drivable,
                       selected: garage.garage.selectedId == skin.id,
                       affordable: garage.coins >= skin.price,
                       onTap: () {
-                        if (garage.garage.isUnlocked(skin.id)) {
+                        if (drivable) {
                           garage.select(skin.id);
+                        } else if (skin.premium) {
+                          game.openPaywall();
                         } else {
                           game.buyCar(skin.id);
                         }
@@ -87,14 +93,14 @@ class GarageOverlay extends StatelessWidget {
 class _CarTile extends StatelessWidget {
   const _CarTile({
     required this.skin,
-    required this.owned,
+    required this.drivable,
     required this.selected,
     required this.affordable,
     required this.onTap,
   });
 
   final CarSkin skin;
-  final bool owned;
+  final bool drivable;
   final bool selected;
   final bool affordable;
   final VoidCallback onTap;
@@ -103,8 +109,10 @@ class _CarTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final border = selected
         ? UiTheme.accent
-        : owned
+        : drivable
         ? Colors.white38
+        : skin.premium
+        ? UiTheme.pass.withValues(alpha: 0.5)
         : Colors.white12;
     return Material(
       color: selected ? UiTheme.accent.withValues(alpha: 0.12) : UiTheme.panel,
@@ -122,11 +130,8 @@ class _CarTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Opacity(
-                  opacity: owned ? 1 : 0.55,
-                  child: CustomPaint(
-                    size: Size.infinite,
-                    painter: _CarPreviewPainter(skin),
-                  ),
+                  opacity: drivable ? 1 : 0.55,
+                  child: CarPreview(skin: skin),
                 ),
               ),
               const SizedBox(height: 8),
@@ -141,7 +146,7 @@ class _CarTile extends StatelessWidget {
               const SizedBox(height: 6),
               _StateRow(
                 skin: skin,
-                owned: owned,
+                drivable: drivable,
                 selected: selected,
                 affordable: affordable,
               ),
@@ -156,13 +161,13 @@ class _CarTile extends StatelessWidget {
 class _StateRow extends StatelessWidget {
   const _StateRow({
     required this.skin,
-    required this.owned,
+    required this.drivable,
     required this.selected,
     required this.affordable,
   });
 
   final CarSkin skin;
-  final bool owned;
+  final bool drivable;
   final bool selected;
   final bool affordable;
 
@@ -175,11 +180,18 @@ class _StateRow extends StatelessWidget {
         color: UiTheme.accent,
       );
     }
-    if (owned) {
+    if (drivable) {
       return const _Tag(
         icon: Icons.touch_app_rounded,
         text: 'TAP TO USE',
         color: Colors.white70,
+      );
+    }
+    if (skin.premium) {
+      return const _Tag(
+        icon: Icons.workspace_premium_rounded,
+        text: 'PASS',
+        color: UiTheme.pass,
       );
     }
     return _Tag(
@@ -215,30 +227,4 @@ class _Tag extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Paints the car exactly as it appears on the road, so the tile is a true
-/// preview rather than a generic icon.
-class _CarPreviewPainter extends CustomPainter {
-  const _CarPreviewPainter(this.skin);
-
-  final CarSkin skin;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final width = size.width * 0.58 * skin.kind.widthFactor;
-    VehiclePainter.draw(
-      canvas,
-      bottomCenter: Offset(size.width / 2, size.height * 0.92),
-      width: width,
-      kind: skin.kind,
-      color: skin.color,
-      lightsAlpha: 0.4,
-      isPlayer: true,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_CarPreviewPainter oldDelegate) =>
-      oldDelegate.skin != skin;
 }

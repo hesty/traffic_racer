@@ -63,6 +63,15 @@ class GameOverOverlay extends StatelessWidget {
                 _Rewards(summary: summary),
               ],
               const Spacer(flex: 3),
+              ListenableBuilder(
+                listenable: game.progression.purchases,
+                builder: (_, _) => game.progression.purchases.isActive
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: PassBanner(onTap: game.openPaywall),
+                      ),
+              ),
               PrimaryButton(
                 label: 'RACE AGAIN',
                 icon: Icons.replay_rounded,
@@ -121,6 +130,13 @@ class _Rewards extends StatelessWidget {
             style: UiTheme.label.copyWith(color: UiTheme.accentDark, fontSize: 12),
           ),
         ],
+        if (summary.passMultiplier > 1) ...[
+          const SizedBox(height: 6),
+          Text(
+            'TURBO PASS  ·  x${summary.passMultiplier.toStringAsFixed(1)} COINS',
+            style: UiTheme.label.copyWith(color: UiTheme.pass, fontSize: 12),
+          ),
+        ],
         const SizedBox(height: 10),
         for (final m in summary.missionsCompleted)
           _BonusLine(
@@ -135,13 +151,6 @@ class _Rewards extends StatelessWidget {
             text: 'All missions done',
             reward: GameConfig.missionAllCompleteBonus,
             color: UiTheme.accent,
-          ),
-        if (summary.ghostBeaten)
-          const _BonusLine(
-            icon: Icons.flag_rounded,
-            text: 'Ghost beaten',
-            reward: GameConfig.ghostBeatenBonus,
-            color: TrafficRacerGame.ghostColor,
           ),
       ],
     );
