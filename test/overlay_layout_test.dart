@@ -8,7 +8,9 @@ import 'package:turbo_traffic_rush/overlays/game_over_overlay.dart';
 import 'package:turbo_traffic_rush/overlays/garage_overlay.dart';
 import 'package:turbo_traffic_rush/overlays/hud_overlay.dart';
 import 'package:turbo_traffic_rush/overlays/menu_overlay.dart';
+import 'package:turbo_traffic_rush/overlays/paywall_overlay.dart';
 import 'package:turbo_traffic_rush/progression/run_stats.dart';
+import 'package:turbo_traffic_rush/progression/subscription.dart';
 import 'package:turbo_traffic_rush/services/high_score_service.dart';
 import 'package:turbo_traffic_rush/services/settings_service.dart';
 
@@ -20,6 +22,22 @@ void main() {
   TrafficRacerGame makeGame() {
     final progression = ProgressionCoordinator();
     progression.garage.creditCoins(480);
+    // No store answers in a test, so hand the paywall its widest state.
+    progression.purchases.debugSetOffers(const [
+      SubscriptionOffer(
+        id: r'$rc_monthly',
+        period: PassPeriod.monthly,
+        priceLabel: '149,99 TL',
+        price: 149.99,
+      ),
+      SubscriptionOffer(
+        id: r'$rc_annual',
+        period: PassPeriod.annual,
+        priceLabel: '999,99 TL',
+        price: 999.99,
+        pricePerMonthLabel: '83,33 TL',
+      ),
+    ]);
     progression.onRunStarted();
     // Complete everything so the result screen shows its longest form.
     const huge = RunStats(
@@ -37,7 +55,7 @@ void main() {
       progression: progression,
       random: Random(1),
     );
-    game.lastRunSummary = progression.onRunFinished(huge, isNewRecord: true);
+    game.lastRunSummary = progression.onRunFinished(huge);
     game.isNewRecord = true;
     game.stats.score = 12345;
     game.hud.publish(
@@ -49,7 +67,6 @@ void main() {
       bestScore: 9000,
       powerUpProgress: const {},
       coinsThisRun: 88,
-      ghostGapMeters: -120,
     );
     return game;
   }
@@ -76,6 +93,7 @@ void main() {
       await pumpOverlay(tester, MenuOverlay(game: game), size);
       await pumpOverlay(tester, GameOverOverlay(game: game), size);
       await pumpOverlay(tester, GarageOverlay(game: game), size);
+      await pumpOverlay(tester, PaywallOverlay(game: game), size);
       await pumpOverlay(tester, HudOverlay(game: game), size);
     });
   }
