@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Turbo Traffic Rush (package name `turbo_traffic_rush`): a portrait-only, pseudo-3D arcade traffic racer built with Flutter and Flame. Three lanes, swipe/tap/keyboard/tilt lane changes, near-miss combos, power-ups, procedurally generated looping track. Retention layer: daily missions, a coin economy with a garage of unlockable cars, a ghost racer replaying the best run, and a daily play streak. Targets Android and iOS (bundle ids `com.hesty.mobile_game` / `com.hesty.racer`). No sprite sheets or image assets: the whole world, the menu backdrop and the garage previews are drawn procedurally with `Canvas` calls.
+Turbo Traffic Rush (package name `turbo_traffic_rush`): a portrait-only, pseudo-3D arcade traffic racer built with Flutter and Flame. Three lanes, swipe/tap/keyboard/tilt lane changes, near-miss combos, power-ups, procedurally generated looping track. Retention layer: daily missions, a coin economy with a garage of unlockable cars, and a daily play streak. Monetisation: the Turbo Pass, a monthly/annual RevenueCat subscription that lends out four pass-only cars. Targets Android and iOS (bundle ids `com.hesty.mobile_game` / `com.hesty.racer`). No sprite sheets or image assets: the whole world, the menu backdrop and the garage previews are drawn procedurally with `Canvas` calls.
 
 ## Commands
 
@@ -23,23 +23,24 @@ Helper scripts (run from `scripts/`):
 - `generate_audio.py` — regenerates every WAV in `assets/audio/` procedurally (needs `numpy`). Sound effects are generated, not authored; edit the script rather than the WAVs.
 - `check_16_kb.sh <apk|aab|dir>` — checks native libs for Android 16 KB page alignment (Google Play requirement).
 
-Tests are mostly pure Dart unit tests over `core/`, `game/` and `progression/`, relying on deterministic seeds (`Track.generate(seed:)`, `Random(n)` injected into `TrafficManager`, `MissionCatalog.forDay(dayKey)`) and injected clocks (`now:` on `MissionsService`/`StreakService`/`ProgressionCoordinator`). Two deliberate exceptions use `testWidgets`: `test/render_test.dart` renders a full run offscreen so painter exceptions fail the build, and `test/overlay_layout_test.dart` pumps each overlay at phone sizes so a `RenderFlex` overflow fails (the test font is much wider than real fonts, so horizontal fits are conservative). Persisting services are tested against `SharedPreferences.setMockInitialValues({})`. No Flame `GameWidget` in tests.
+Tests are mostly pure Dart unit tests over `core/`, `game/`, `progression/` and the pass rules in `test/subscription_test.dart`, relying on deterministic seeds (`Track.generate(seed:)`, `Random(n)` injected into `TrafficManager`, `MissionCatalog.forDay(dayKey)`) and injected clocks (`now:` on `MissionsService`/`StreakService`/`ProgressionCoordinator`). Two deliberate exceptions use `testWidgets`: `test/render_test.dart` renders a full run offscreen so painter exceptions fail the build, and `test/overlay_layout_test.dart` pumps each overlay at phone sizes so a `RenderFlex` overflow fails (the test font is much wider than real fonts, so horizontal fits are conservative). Persisting services are tested against `SharedPreferences.setMockInitialValues({})`. No Flame `GameWidget` in tests.
 
 ## Architecture
 
 Layers, dependency direction top → bottom (lower layers never import higher ones):
 
 ```
-main.dart            GameWidget.controlled + overlayBuilderMap (menu/hud/pause/gameOver/garage)
+main.dart            GameWidget.controlled + overlayBuilderMap (menu/hud/pause/gameOver/garage/paywall)
 overlays/            Flutter widgets shown over the game; read game state, call game methods
 game/                TrafficRacerGame (simulation + phase machine), TrafficManager, ScoreKeeper,
                      PowerUpManager, HudModel, ProgressionCoordinator (run hooks → progression)
 world/               WorldComponent (single Flame Component that renders everything), painters, palette
 services/            AudioService, SettingsService, HighScoreService, TiltController,
-                     MissionsService, GarageService, StreakService, GhostService
+                     MissionsService, GarageService, StreakService, PurchaseService,
+                     PaywallPromptService, RevenueCatKeys, StoreLinks
 progression/         pure Dart, no Flutter/Flame: Mission/MissionCatalog/MissionTracker/RunStats,
-                     CarCatalog/Garage/Wallet/CoinFormula, GhostTrace/GhostRecorder/GhostPlayer,
-                     Streak/StreakCalculator, day keys
+                     CarCatalog/Garage/Wallet/CoinFormula, Streak/StreakCalculator,
+                     SubscriptionOffer, day keys
 entities/            plain data classes: Player, TrafficVehicle, PowerUpPickup
 core/                GameConfig (all tunables), Projector (perspective math), Track/Segment
 ```
@@ -67,11 +68,19 @@ core/                GameConfig (all tunables), Projector (perspective math), Tr
 - `ScreenPoint` scratch objects live on `Segment` and are reused every frame; avoid allocating in the render loop.
 
 ### Progression (`game/progression_coordinator.dart`, `progression/`, `services/`)
-- `TrafficRacerGame` calls four hooks: `onRunStarted` (roll/refresh missions, register streak day, arm the ghost), `onRunTick` every frame (ghost recording + replay, primitives only), `onRunProgress` at the 12 Hz HUD cadence with a `RunStats` snapshot (mission ratchet, ghost-beaten check), `onRunFinished` (coin payout, ghost submit when `isNewRecord`) returning a `RunSummary` the game-over overlay reads via `game.lastRunSummary`.
+- `TrafficRacerGame` calls three hooks: `onRunStarted` (roll/refresh missions, register the streak day), `onRunProgress` at the 12 Hz HUD cadence with a `RunStats` snapshot (mission ratchet), `onRunFinished` (coin payout) returning a `RunSummary` the game-over overlay reads via `game.lastRunSummary`.
 - Missions are deterministic per calendar day (`MissionCatalog.forDay(yyyymmdd)`); cumulative kinds add across the day's runs, the rest count the best single run. Rewards are credited the moment a mission completes; the all-done bonus once per day.
-- The ghost is stored as distance-over-time (`GhostTrace`), never as track z, because every run regenerates the track. The renderer places it at `playerTrackZ + gap`, only while a run is in progress, and draws a fixed translucent sedan through `saveLayer`.
-- `GarageService`/`MissionsService` are `ChangeNotifier`s (compound state); `StreakService`/`GhostService` expose `ValueNotifier`s. All swallow prefs failures like the older services.
+- `GarageService`/`MissionsService` are `ChangeNotifier`s (compound state); `StreakService` exposes a `ValueNotifier`. All swallow prefs failures like the older services.
 - Mission targets, rewards, coin rates and streak caps live in `GameConfig`; car prices live in `CarCatalog`.
+
+### Monetisation (`services/purchase_service.dart`, `overlays/paywall_overlay.dart`)
+- The Turbo Pass is one RevenueCat entitlement (`GameConfig.passEntitlement`, `pass`) sold as a monthly and an annual plan out of the `default` offering. `PurchaseService` is the only file that imports `purchases_flutter`; everything above it sees `SubscriptionOffer`, a plain data class in `progression/`.
+- Like every other service it swallows platform failures. With no key, no store or no network the pass reads as inactive, `offers` stays empty and the paywall lays out in its "unavailable" state — which is what tests and desktop builds get. The last known entitlement is cached in prefs so an offline launch does not strip the player's cars.
+- Pass-only cars (`CarSkin.premium`) are never *owned*, only lent: `Garage.unlockedIds` stays coin-only and `Garage.canDrive(id, passActive:)` asks the live entitlement. `ProgressionCoordinator` subscribes `GarageService.onPassChanged` to `PurchaseService`, so a lapsed pass drops the selection back to the default car.
+- Four paywall triggers: the menu button, a `PassBanner` on the result screen, tapping a pass-only garage tile, and one automatic prompt after `GameConfig.paywallAutoPromptAfterRuns` runs (`PaywallPromptService`, once per install).
+- The paywall is an overlay like the garage — no new `GamePhase`. `openPaywall`/`closePaywall` remember which screen to restore, including the garage.
+- `GameConfig.passCoinMultiplier` is the lever that turns the pass from cosmetic into an economy perk; at 1.0 the game-over screen simply omits the pass line.
+- Public SDK keys live in `services/revenuecat_keys.dart` (safe to commit; `--dart-define` overrides them). The API v2 secret key is dashboard-only and never enters the app. `services/store_links.dart` holds the terms/privacy URLs the stores require on a paywall.
 
 ### Tuning
 Every gameplay/geometry constant lives in `core/game_config.dart` (speeds, spawn windows, `blockWindow`, `sameLaneGap`, collision lengths, power-up timings). Change balance there first; `TrafficManager` and `TrafficRacerGame` read from it rather than holding their own magic numbers. Unit conversions for display (`_unitsPerKmh`, `_unitsPerMeter`) live in `TrafficRacerGame`.

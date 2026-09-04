@@ -27,7 +27,6 @@ Turbo Traffic Rush is a portrait, pseudo-3D arcade traffic racer built with **Fl
 - **Persistent best score & distance**, sound / music / tilt toggles, pause and app-lifecycle handling.
 - **Daily missions:** three goals per calendar day (deterministic, no server) that pay coins; finish all three for a bonus.
 - **Garage & coins:** every run earns coins from distance and near misses; spend them on ten unlockable car bodies and colours, previewed exactly as they look on the road.
-- **Ghost racer:** your best run is recorded as pace-over-time and replayed as a translucent car ahead of you, with a live gap readout and a bonus for beating it.
 - **Daily streak:** consecutive days played multiply coin income (up to +50%).
 
 ### Screenshots
@@ -79,14 +78,14 @@ lib/
   entities/    player, traffic_vehicle, power_up_pickup — plain data, no Flame components
   game/        traffic_racer_game (state machine + simulation), traffic_manager, score_keeper,
                power_up_manager, hud_model, progression_coordinator (run hooks → progression)
-  progression/ pure Dart: missions, garage/wallet/coin formula, ghost trace/recorder/player, streak
+  progression/ pure Dart: missions, garage/wallet/coin formula, streak
   world/       world_component (one render pass: sky → road → depth-sorted sprites → player → effects),
                sky_painter, vehicle_painter, world_palette, effects
   services/    audio_service, settings_service, high_score_service, tilt_controller,
-               missions_service, garage_service, streak_service, ghost_service
+               missions_service, garage_service, streak_service
   overlays/    menu, hud, pause, game over, garage (Flutter widgets on top of the game)
 scripts/       generate_audio.py — regenerates every WAV in assets/audio
-test/          projection, track, scoring, traffic wall-avoidance, missions/garage/ghost/streak,
+test/          projection, track, scoring, traffic wall-avoidance, missions/garage/streak,
                persistence round-trips, overlay layout at phone sizes, offscreen render of a full run
 ```
 
@@ -128,7 +127,6 @@ Turbo Traffic Rush, **Flutter** ve **Flame** motoruyla geliştirilmiş dikey, ps
 - **Kalıcı en iyi skor ve mesafe**, ses / müzik / tilt anahtarları, duraklatma ve uygulama yaşam döngüsü yönetimi.
 - **Günlük görevler:** takvim gününe göre belirlenen (sunucusuz) üç hedef coin öder; üçünü de bitirince bonus.
 - **Garaj ve coin:** her tur mesafe ve near-miss'ten coin kazandırır; on farklı açılabilir gövde/renk, yolda göründüğü gibi önizlenir.
-- **Ghost yarışçı:** en iyi turunuz zamana bağlı tempo olarak kaydedilir ve önünüzde yarı saydam bir araba olarak tekrar oynatılır; canlı fark göstergesi ve geçme bonusu.
 - **Günlük seri:** art arda oynanan günler coin kazancını çarpar (en fazla +%50).
 
 ### Ekran Görüntüleri
@@ -180,14 +178,14 @@ lib/
   entities/    player, traffic_vehicle, power_up_pickup — Flame bileşeni değil, saf veri
   game/        traffic_racer_game (durum makinesi + simülasyon), traffic_manager, score_keeper,
                power_up_manager, hud_model, progression_coordinator (tur kancaları → ilerleme katmanı)
-  progression/ saf Dart: görevler, garaj/cüzdan/coin formülü, ghost izi/kayıt/oynatma, seri
+  progression/ saf Dart: görevler, garaj/cüzdan/coin formülü, seri
   world/       world_component (tek çizim geçişi: gökyüzü → yol → derinlik sıralı sprite'lar → oyuncu → efektler),
                sky_painter, vehicle_painter, world_palette, effects
   services/    audio_service, settings_service, high_score_service, tilt_controller,
-               missions_service, garage_service, streak_service, ghost_service
+               missions_service, garage_service, streak_service
   overlays/    menü, HUD, duraklatma, oyun sonu, garaj (oyunun üstündeki Flutter widget'ları)
 scripts/       generate_audio.py — assets/audio içindeki tüm WAV'ları yeniden üretir
-test/          projeksiyon, pist, skor, trafik duvar-önleme, görev/garaj/ghost/seri mantığı,
+test/          projeksiyon, pist, skor, trafik duvar-önleme, görev/garaj/seri mantığı,
                kalıcılık, telefon boyutlarında overlay yerleşimi, tam bir turun ekran dışı render'ı
 ```
 
