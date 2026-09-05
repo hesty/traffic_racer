@@ -9,9 +9,11 @@ class CarShowcase extends StatelessWidget {
     super.key,
     required this.skin,
     this.caption = 'Ready to race',
+    this.compact = false,
   });
   final CarSkin skin;
   final String caption;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -50,7 +52,7 @@ class CarShowcase extends StatelessWidget {
           ],
         ),
         SizedBox(
-          height: 116,
+          height: compact ? 76 : 116,
           child: Stack(
             alignment: Alignment.center,
             children: [

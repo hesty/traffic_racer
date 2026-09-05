@@ -20,6 +20,7 @@ class VehiclePainter {
     bool braking = false,
     double lightsAlpha = 0,
     bool isPlayer = false,
+    bool premium = false,
     double nitro = 0,
   }) {
     if (width < 1.5) {
@@ -67,6 +68,24 @@ class VehiclePainter {
         _drawBus(canvas, w, h, color);
       default:
         _drawCar(canvas, w, h, color, kind, isPlayer: isPlayer);
+    }
+
+    if (premium && width >= 12) {
+      final stripe = Paint()..color = const Color(0xDDDFE9F5);
+      for (final side in [-1, 1]) {
+        canvas.drawRect(Rect.fromLTWH(side * w * 0.085 - w * 0.025,
+          -h * 0.55, w * 0.05, h * 0.18), stripe);
+        canvas.drawRect(Rect.fromLTWH(side * w * 0.085 - w * 0.025,
+          -h * 0.98, w * 0.05, h * 0.035), stripe);
+      }
+      final diffuser = Paint()..color = const Color(0xFF15202B);
+      canvas.drawRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(-w * 0.32, -h * 0.18, w * 0.64, h * 0.1),
+        Radius.circular(w * 0.025)), diffuser);
+      for (final side in [-1, 1]) {
+        canvas.drawOval(Rect.fromCenter(center: Offset(side * w * 0.3, -h * 0.12),
+          width: w * 0.08, height: h * 0.05), stripe);
+      }
     }
 
     _drawLights(canvas, w, h, kind, braking: braking, lightsAlpha: lightsAlpha);

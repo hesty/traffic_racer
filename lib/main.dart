@@ -10,6 +10,7 @@ import 'overlays/hud_overlay.dart';
 import 'overlays/menu_overlay.dart';
 import 'overlays/pause_overlay.dart';
 import 'overlays/paywall_overlay.dart';
+import 'overlays/ui_theme.dart';
 import 'services/high_score_service.dart';
 import 'services/settings_service.dart';
 
@@ -47,7 +48,15 @@ class TurboTrafficRushApp extends StatelessWidget {
     return MaterialApp(
       title: 'Turbo Traffic Rush',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: true),
+      theme: ThemeData.dark(useMaterial3: true).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: UiTheme.pass,
+          brightness: Brightness.dark,
+          primary: UiTheme.pass,
+          secondary: UiTheme.accent,
+          surface: const Color(0xFF101D30),
+        ),
+      ),
       home: Scaffold(
         backgroundColor: const Color(0xFF05071A),
         body: GameWidget<TrafficRacerGame>.controlled(

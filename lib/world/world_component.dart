@@ -359,6 +359,7 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
         braking: crashed,
         lightsAlpha: palette.headlightAlpha,
         isPlayer: true,
+        premium: skin.premium,
         nitro: game.nitroVisual > 0.05 ? game.runTime * game.nitroVisual : 0);
   }
 

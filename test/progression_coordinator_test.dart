@@ -31,6 +31,23 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test('pass doubles run earnings without doubling mission rewards', () async {
+    final free = ProgressionCoordinator(now: now);
+    await free.load();
+    free.onRunStarted();
+    final stats = snapshot(distance: 2400, nearMisses: 5, seconds: 60);
+    final freeSummary = free.onRunFinished(stats);
+    SharedPreferences.setMockInitialValues({'pass_active_v1': true});
+    final paid = ProgressionCoordinator(now: now);
+    await paid.load();
+    paid.onRunStarted();
+    final paidSummary = paid.onRunFinished(stats);
+    expect(paidSummary.runCoins, freeSummary.runCoins * 2);
+    expect(paidSummary.missionCoins, freeSummary.missionCoins);
+    expect(freeSummary.potentialPassBonus, paidSummary.runCoins - freeSummary.runCoins);
+    expect(paidSummary.potentialPassBonus, 0);
+  });
+
   test('a run pays coins and persists', () async {
     final p = ProgressionCoordinator(now: now);
     await p.load();

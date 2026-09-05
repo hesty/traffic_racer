@@ -121,6 +121,7 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
         const Spacer(),
         const SizedBox(height: 16),
         CarShowcase(
+          compact: true,
           skin: _previewSkin,
           caption: 'Exclusive Turbo Pass collection',
         ),
@@ -134,12 +135,6 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
           icon: Icons.monetization_on_rounded,
           title: '2× coins on every run',
           detail: 'Distance and near-miss coins doubled. Streak bonuses stack.',
-        ),
-        const SizedBox(height: 10),
-        _Benefit(
-          icon: Icons.garage_rounded,
-          title: 'All ${CarCatalog.premium.length} exclusive cars',
-          detail: 'Switch between every Pass car while subscribed.',
         ),
         const SizedBox(height: 16),
         if (!_purchases.isActive &&

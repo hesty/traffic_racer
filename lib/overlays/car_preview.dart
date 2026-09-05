@@ -34,6 +34,7 @@ class _CarPreviewPainter extends CustomPainter {
       color: skin.color,
       lightsAlpha: 0.4,
       isPlayer: true,
+      premium: skin.premium,
     );
   }
 
