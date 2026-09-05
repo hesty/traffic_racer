@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:turbo_traffic_rush/game/progression_coordinator.dart';
+import 'package:turbo_traffic_rush/game/power_up_manager.dart';
 import 'package:turbo_traffic_rush/game/traffic_racer_game.dart';
 import 'package:turbo_traffic_rush/overlays/game_over_overlay.dart';
 import 'package:turbo_traffic_rush/overlays/garage_overlay.dart';
@@ -17,7 +18,7 @@ import 'package:turbo_traffic_rush/services/settings_service.dart';
 /// Lays every overlay out on a small and a tall phone. A RenderFlex overflow
 /// throws in tests, so this guards the busier menu and result screens.
 void main() {
-  const sizes = [Size(360, 640), Size(390, 844)];
+  const sizes = [Size(320, 568), Size(360, 640), Size(390, 844)];
 
   TrafficRacerGame makeGame() {
     final progression = ProgressionCoordinator();
@@ -65,7 +66,7 @@ void main() {
       combo: 5,
       comboProgress: 0.5,
       bestScore: 9000,
-      powerUpProgress: const {},
+      powerUpProgress: {for (final type in PowerUpType.values) type: 0.7},
       coinsThisRun: 88,
     );
     return game;
@@ -75,26 +76,34 @@ void main() {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      theme: ThemeData.dark(useMaterial3: true),
-      home: Scaffold(body: child),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(useMaterial3: true),
+        home: Scaffold(body: child),
+      ),
+    );
     await tester.pump();
     final error = tester.takeException();
-    expect(error, isNull,
-        reason: '${child.runtimeType}: '
-            '${error is FlutterError ? error.toStringDeep() : error}');
+    expect(
+      error,
+      isNull,
+      reason:
+          '${child.runtimeType}: '
+          '${error is FlutterError ? error.toStringDeep() : error}',
+    );
   }
 
   for (final size in sizes) {
-    testWidgets('overlays fit a ${size.width.toInt()}x${size.height.toInt()} screen',
-        (tester) async {
-      final game = makeGame();
-      await pumpOverlay(tester, MenuOverlay(game: game), size);
-      await pumpOverlay(tester, GameOverOverlay(game: game), size);
-      await pumpOverlay(tester, GarageOverlay(game: game), size);
-      await pumpOverlay(tester, PaywallOverlay(game: game), size);
-      await pumpOverlay(tester, HudOverlay(game: game), size);
-    });
+    testWidgets(
+      'overlays fit a ${size.width.toInt()}x${size.height.toInt()} screen',
+      (tester) async {
+        final game = makeGame();
+        await pumpOverlay(tester, MenuOverlay(game: game), size);
+        await pumpOverlay(tester, GameOverOverlay(game: game), size);
+        await pumpOverlay(tester, GarageOverlay(game: game), size);
+        await pumpOverlay(tester, PaywallOverlay(game: game), size);
+        await pumpOverlay(tester, HudOverlay(game: game), size);
+      },
+    );
   }
 }

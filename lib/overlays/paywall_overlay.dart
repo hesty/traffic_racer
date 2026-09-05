@@ -7,6 +7,7 @@ import '../progression/subscription.dart';
 import '../services/purchase_service.dart';
 import '../services/store_links.dart';
 import 'car_preview.dart';
+import 'car_showcase.dart';
 import 'ui_theme.dart';
 
 /// Turbo Pass paywall: what the pass unlocks, the plans on sale, and the
@@ -26,6 +27,7 @@ class PaywallOverlay extends StatefulWidget {
 
 class _PaywallOverlayState extends State<PaywallOverlay> {
   String? _pickedId;
+  CarSkin _previewSkin = CarCatalog.premium.first;
 
   PurchaseService get _purchases => widget.game.progression.purchases;
 
@@ -102,19 +104,60 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
           shaderCallback: (b) => const LinearGradient(
             colors: [UiTheme.pass, UiTheme.passDark],
           ).createShader(b),
-          child: Text('TURBO PASS',
-              textAlign: TextAlign.center, style: UiTheme.title(32)),
+          child: Text(
+            'TURBO PASS',
+            textAlign: TextAlign.center,
+            style: UiTheme.title(32),
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           _purchases.isActive
               ? 'Your pass is active. Every car below is yours to drive.'
-              : '${CarCatalog.premium.length} cars nobody else on the road gets.',
+              : 'Your next favourite car. Twice the run coins.',
           textAlign: TextAlign.center,
           style: UiTheme.label.copyWith(color: Colors.white, fontSize: 13),
         ),
         const Spacer(),
-        const _PremiumCarStrip(),
+        const SizedBox(height: 16),
+        CarShowcase(
+          skin: _previewSkin,
+          caption: 'Exclusive Turbo Pass collection',
+        ),
+        const SizedBox(height: 10),
+        _PremiumCarStrip(
+          selected: _previewSkin,
+          onSelected: (skin) => setState(() => _previewSkin = skin),
+        ),
+        const SizedBox(height: 16),
+        const _Benefit(
+          icon: Icons.monetization_on_rounded,
+          title: '2× coins on every run',
+          detail: 'Distance and near-miss coins doubled. Streak bonuses stack.',
+        ),
+        const SizedBox(height: 10),
+        _Benefit(
+          icon: Icons.garage_rounded,
+          title: 'All ${CarCatalog.premium.length} exclusive cars',
+          detail: 'Switch between every Pass car while subscribed.',
+        ),
+        const SizedBox(height: 16),
+        if (!_purchases.isActive &&
+            widget.game.progression.paywallPrompt.canTestDrive) ...[
+          OutlinedButton.icon(
+            onPressed: busy
+                ? null
+                : () => widget.game.startTestDrive(_previewSkin),
+            icon: const Icon(Icons.sports_motorsports_rounded),
+            label: Text('Test drive ${_previewSkin.label} free'),
+          ),
+          Text(
+            'One full run today. No subscription starts. Standard coin rewards.',
+            textAlign: TextAlign.center,
+            style: UiTheme.label.copyWith(fontSize: 11),
+          ),
+          const SizedBox(height: 16),
+        ],
         const Spacer(),
         if (_purchases.isActive)
           const _ActiveNotice()
@@ -125,8 +168,9 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
             _PlanCard(
               offer: offer,
               selected: offer.id == selected?.id,
-              savingsPercent:
-                  offer.period == PassPeriod.annual ? savings : null,
+              savingsPercent: offer.period == PassPeriod.annual
+                  ? savings
+                  : null,
               onTap: busy ? null : () => setState(() => _pickedId = offer.id),
             ),
             const SizedBox(height: 10),
@@ -134,27 +178,33 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
         const SizedBox(height: 4),
         if (!_purchases.isActive) ...[
           PrimaryButton(
-            label: busy ? 'PLEASE WAIT' : 'GET THE PASS',
+            label: busy ? 'Please wait…' : 'Subscribe to Turbo Pass',
             icon: Icons.workspace_premium_rounded,
             color: UiTheme.pass,
-            foreground: Colors.white,
+            foreground: const Color(0xFF101D30),
             onPressed: busy || selected == null ? null : _buy,
           ),
           const SizedBox(height: 8),
           Text(
-            'Renews automatically until cancelled. Manage or cancel any time '
-            'in your store account.',
+            '${selected == null ? '' : '${selected.priceLabel} billed ${selected.period == PassPeriod.annual ? 'yearly' : 'monthly'}. '}'
+            'Renews automatically until cancelled in your store account.',
             textAlign: TextAlign.center,
             style: UiTheme.label.copyWith(fontSize: 11, color: Colors.white54),
           ),
         ],
+        TextButton(
+          onPressed: widget.game.closePaywall,
+          child: const Text('Continue playing free'),
+        ),
         if (error != null) ...[
           const SizedBox(height: 8),
           Text(
             error,
             textAlign: TextAlign.center,
             style: UiTheme.label.copyWith(
-                fontSize: 12, color: const Color(0xFFFF8A80)),
+              fontSize: 12,
+              color: const Color(0xFFFF8A80),
+            ),
           ),
         ],
         const SizedBox(height: 4),
@@ -163,10 +213,11 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
           children: [
             if (!_purchases.isActive)
               _FooterLink(label: 'Restore', onTap: busy ? null : _restore),
+            _FooterLink(label: 'Terms', onTap: () => _open(StoreLinks.terms)),
             _FooterLink(
-                label: 'Terms', onTap: () => _open(StoreLinks.terms)),
-            _FooterLink(
-                label: 'Privacy', onTap: () => _open(StoreLinks.privacy)),
+              label: 'Privacy',
+              onTap: () => _open(StoreLinks.privacy),
+            ),
           ],
         ),
       ],
@@ -176,7 +227,9 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
 
 /// The pass-only cars, drawn exactly as they appear on the road.
 class _PremiumCarStrip extends StatelessWidget {
-  const _PremiumCarStrip();
+  const _PremiumCarStrip({required this.selected, required this.onSelected});
+  final CarSkin selected;
+  final ValueChanged<CarSkin> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -184,18 +237,36 @@ class _PremiumCarStrip extends StatelessWidget {
       children: [
         for (final skin in CarCatalog.premium)
           Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: 52, child: CarPreview(skin: skin)),
-                const SizedBox(height: 6),
-                Text(
-                  skin.label.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiTheme.label.copyWith(fontSize: 10),
+            child: Semantics(
+              button: true,
+              selected: selected.id == skin.id,
+              label: 'Preview ${skin.label}',
+              child: InkWell(
+                onTap: () => onSelected(skin),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: selected.id == skin.id
+                        ? Colors.white12
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 38, child: CarPreview(skin: skin)),
+                      const SizedBox(height: 6),
+                      Text(
+                        skin.label.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiTheme.label.copyWith(fontSize: 10),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
       ],
@@ -261,7 +332,9 @@ class _PlanCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: UiTheme.label.copyWith(
-                                color: Colors.white, fontSize: 12),
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         if (savingsPercent != null) ...[
@@ -278,9 +351,10 @@ class _PlanCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800),
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ],
                 ),
@@ -306,9 +380,14 @@ class _SaveBadge extends StatelessWidget {
         color: UiTheme.pass.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Text('SAVE $percent%',
-          style: const TextStyle(
-              color: UiTheme.pass, fontSize: 10, fontWeight: FontWeight.w900)),
+      child: Text(
+        'SAVE $percent%',
+        style: const TextStyle(
+          color: UiTheme.pass,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
     );
   }
 }
@@ -366,8 +445,46 @@ class _FooterLink extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: Text(label,
-          style: UiTheme.label.copyWith(fontSize: 11, color: Colors.white54)),
+      child: Text(
+        label,
+        style: UiTheme.label.copyWith(fontSize: 11, color: Colors.white54),
+      ),
     );
   }
+}
+
+class _Benefit extends StatelessWidget {
+  const _Benefit({
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
+  final IconData icon;
+  final String title;
+  final String detail;
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, size: 24, color: UiTheme.pass),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(detail, style: UiTheme.label.copyWith(fontSize: 12)),
+          ],
+        ),
+      ),
+    ],
+  );
 }

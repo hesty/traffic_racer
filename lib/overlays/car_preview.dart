@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../entities/traffic_vehicle.dart';
@@ -23,7 +24,8 @@ class _CarPreviewPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final width = size.width * 0.58 * skin.kind.widthFactor;
+    final width =
+        math.min(size.width * 0.58, size.height * 0.85) * skin.kind.widthFactor;
     VehiclePainter.draw(
       canvas,
       bottomCenter: Offset(size.width / 2, size.height * 0.92),

@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 import '../core/game_config.dart';
 import '../core/projection.dart';
 import '../core/track.dart';
+import '../core/swept_collision.dart';
 import '../entities/player.dart';
 import '../entities/power_up_pickup.dart';
 import '../entities/traffic_vehicle.dart';
@@ -95,6 +96,11 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   double nitroVisual = 0;
   double _powerUpSpawnTimer = 0;
   double _hudTimer = 0;
+  double _accumulator = 0;
+  double cameraOffset = 0;
+  CarSkin? _testDriveSkin;
+  CarSkin? lastTestDriveSkin;
+  bool get isTestDrive => _testDriveSkin != null;
   bool isNewRecord = false;
   int _powerUpsCollected = 0;
 
@@ -120,7 +126,19 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   int get distanceMeters => (stats.distance / _unitsPerMeter).round();
   double get _distanceMetersExact => stats.distance / _unitsPerMeter;
 
-  CarSkin get selectedSkin => progression.garage.selectedSkin;
+  CarSkin get selectedSkin => _testDriveSkin ?? progression.garage.selectedSkin;
+
+  bool startTestDrive(CarSkin skin) {
+    if (!skin.premium ||
+        progression.purchases.isActive ||
+        (phase != GamePhase.menu && phase != GamePhase.gameOver) ||
+        !progression.paywallPrompt.claimTestDrive()) {
+      return false;
+    }
+    startRun();
+    _testDriveSkin = skin;
+    return true;
+  }
 
   @override
   Color backgroundColor() => const Color(0xFF05071A);
@@ -164,6 +182,11 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     stats.reset();
     powerUps.clear();
     player.reset();
+    _testDriveSkin = null;
+    lastTestDriveSkin = null;
+    cameraOffset = 0;
+    _accumulator = 0;
+    _hudTimer = 0;
     pickups.clear();
     floatingTexts.clear();
     debris.clear();
@@ -196,6 +219,7 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   void pauseRun() {
     if (phase != GamePhase.playing) return;
     phase = GamePhase.paused;
+    _accumulator = 0;
     overlays.add(Overlays.pause);
     progression.onRunPaused();
     audio.pauseEngine();
@@ -220,6 +244,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
   void backToMenu() {
     phase = GamePhase.menu;
+    _testDriveSkin = null;
+    _accumulator = 0;
     overlays.remove(Overlays.pause);
     overlays.remove(Overlays.gameOver);
     overlays.remove(Overlays.garage);
@@ -250,6 +276,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
 
   void _finishRun() {
     phase = GamePhase.gameOver;
+    lastTestDriveSkin = _testDriveSkin;
+    _testDriveSkin = null;
     isNewRecord = highScores.submit(
       score: stats.score,
       distanceMeters: distanceMeters,
@@ -263,8 +291,9 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   /// Shows the garage over the menu or the game-over screen.
   void openGarage() {
     if (phase != GamePhase.menu && phase != GamePhase.gameOver) return;
-    _garageReturnOverlay =
-        phase == GamePhase.gameOver ? Overlays.gameOver : Overlays.menu;
+    _garageReturnOverlay = phase == GamePhase.gameOver
+        ? Overlays.gameOver
+        : Overlays.menu;
     overlays.remove(_garageReturnOverlay);
     overlays.add(Overlays.garage);
   }
@@ -283,8 +312,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     _paywallReturnOverlay = overlays.isActive(Overlays.garage)
         ? Overlays.garage
         : phase == GamePhase.gameOver
-            ? Overlays.gameOver
-            : Overlays.menu;
+        ? Overlays.gameOver
+        : Overlays.menu;
     overlays.remove(_paywallReturnOverlay);
     overlays.add(Overlays.paywall);
   }
@@ -366,19 +395,33 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   @override
   void update(double dt) {
     super.update(dt);
-    final step = math.min(dt, 1 / 20);
-    switch (phase) {
-      case GamePhase.menu:
-        _updateAttract(step);
-      case GamePhase.playing:
-        _simulate(step);
-      case GamePhase.crashing:
-        _updateCrash(step);
-      case GamePhase.paused:
-      case GamePhase.gameOver:
-        break;
+    if (!dt.isFinite ||
+        dt <= 0 ||
+        phase == GamePhase.paused ||
+        phase == GamePhase.gameOver) {
+      return;
     }
-    _updateEffects(step);
+    // Preserve ordinary slow frames; bound long stalls to avoid a catch-up spiral.
+    const step = 1 / 120;
+    _accumulator += math.min(dt, 0.1);
+    while (_accumulator + 1e-10 >= step) {
+      _accumulator = math.max(0, _accumulator - step);
+      switch (phase) {
+        case GamePhase.menu:
+          _updateAttract(step);
+        case GamePhase.playing:
+          _simulate(step);
+        case GamePhase.crashing:
+          _updateCrash(step);
+        case GamePhase.paused:
+        case GamePhase.gameOver:
+          _accumulator = 0;
+          return;
+      }
+      cameraOffset +=
+          (player.offset - cameraOffset) * (1 - math.exp(-step * 10));
+      _updateEffects(step);
+    }
   }
 
   void _updateAttract(double dt) {
@@ -418,6 +461,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
         ((powerUps.isActive(PowerUpType.nitro) ? 1 : 0) - nitroVisual) *
         math.min(1, dt * 4);
 
+    final previousPlayerZ = playerTrackZ;
+    final previousOffset = player.offset;
     final dz = speed * worldDt;
     position = track.wrap(position + dz);
     runTime += dt;
@@ -433,7 +478,8 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
     skyOffset += track.segmentAt(position).curve * speedFraction * dt * 90;
     dayPhase = (_distanceMetersExact / _dayCycleMeters) % 1;
 
-    _resolveTraffic(playerZ);
+    _resolveTraffic(playerZ, previousPlayerZ, previousOffset, worldDt);
+    if (phase != GamePhase.playing) return;
     _updatePickups(dt, playerZ);
 
     if (stats.addDistance(dz, multiplier: powerUps.scoreMultiplier)) {
@@ -452,14 +498,14 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
   }
 
   RunStats _runStats() => RunStats(
-        distanceMeters: distanceMeters,
-        nearMisses: stats.nearMisses,
-        bestCombo: stats.bestCombo,
-        overtakes: stats.overtakes,
-        powerUpsCollected: _powerUpsCollected,
-        level: stats.level,
-        surviveSeconds: runTime.floor(),
-      );
+    distanceMeters: distanceMeters,
+    nearMisses: stats.nearMisses,
+    bestCombo: stats.bestCombo,
+    overtakes: stats.overtakes,
+    powerUpsCollected: _powerUpsCollected,
+    level: stats.level,
+    surviveSeconds: runTime.floor(),
+  );
 
   /// Feeds the progression layer and announces what it unlocked.
   void _evaluateProgress(RunStats snapshot) {
@@ -471,14 +517,22 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       }
     }
     if (progression.allBonusJustEarned) {
-      _toast('ALL MISSIONS  +${GameConfig.missionAllCompleteBonus}', _coinColor,
-          size: 28);
+      _toast(
+        'ALL MISSIONS  +${GameConfig.missionAllCompleteBonus}',
+        _coinColor,
+        size: 28,
+      );
     }
   }
 
   static const Color _coinColor = Color(0xFFFFC93C);
 
-  void _resolveTraffic(double playerZ) {
+  void _resolveTraffic(
+    double playerZ,
+    double previousPlayerZ,
+    double previousOffset,
+    double worldDt,
+  ) {
     final playerHalf = GameConfig.vehicleWidth / 2;
     for (final v in List<TrafficVehicle>.of(traffic.vehicles)) {
       final rel = track.signedDistance(playerZ, v.z);
@@ -486,8 +540,18 @@ class TrafficRacerGame extends FlameGame with KeyboardEvents {
       final overlapWidth =
           playerHalf + GameConfig.vehicleWidth * v.kind.widthFactor / 2;
 
-      if (rel.abs() < GameConfig.collisionLength &&
-          lateral < overlapWidth * 0.92) {
+      final previousRel = track.signedDistance(
+        previousPlayerZ,
+        track.wrap(v.z - v.speed * worldDt),
+      );
+      if (sweptCollision(
+        fromZ: previousRel,
+        toZ: rel,
+        fromX: GameConfig.laneCenter(v.lane) - previousOffset,
+        toX: GameConfig.laneCenter(v.lane) - player.offset,
+        halfLength: GameConfig.collisionLength,
+        halfWidth: overlapWidth * 0.92,
+      )) {
         if (powerUps.shielded) {
           _smashThrough(v);
         } else {

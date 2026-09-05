@@ -95,9 +95,8 @@ class GameConfig {
   static const String passEntitlement = 'pass';
 
   /// Coin multiplier the pass grants, stacked on top of the streak bonus.
-  /// 1.0 keeps the pass purely cosmetic; raise it if the pass needs to pull
-  /// its weight in the economy rather than only in the garage.
-  static const double passCoinMultiplier = 1.0;
+  /// Applies to distance and near-miss earnings, not mission rewards.
+  static const double passCoinMultiplier = 2.0;
 
   /// Completed runs before the paywall shows itself once, unprompted.
   static const int paywallAutoPromptAfterRuns = 3;

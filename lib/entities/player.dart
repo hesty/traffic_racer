@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../core/game_config.dart';
 
 /// The player's car: a lane index plus a smoothed lateral offset.
@@ -10,6 +12,8 @@ class Player {
   /// -1, 0 or 1 while a lane change is in progress (used for the visual
   /// steering tilt).
   int steer = 0;
+
+  double lean = 0;
 
   double _from = 0;
   double _to = 0;
@@ -30,6 +34,9 @@ class Player {
   }
 
   void update(double dt) {
+    lean +=
+        ((isChangingLane ? steer.toDouble() : 0) - lean) *
+        (1 - math.exp(-dt * 16));
     if (_t >= 1) return;
     _t = (_t + dt / GameConfig.laneChangeDuration).clamp(0.0, 1.0);
     // Smoothstep for a snappy but eased slide.
@@ -45,6 +52,7 @@ class Player {
     lane = GameConfig.laneCount ~/ 2;
     offset = GameConfig.laneCenter(lane);
     steer = 0;
+    lean = 0;
     _t = 1;
   }
 }

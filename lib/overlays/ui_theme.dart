@@ -6,32 +6,33 @@ import '../progression/car_catalog.dart';
 class UiTheme {
   UiTheme._();
 
-  static const accent = Color(0xFFF2D21B);
-  static const accentDark = Color(0xFFFF7A29);
+  static const accent = Color(0xFFFF844B);
+  static const accentDark = Color(0xFFE85C35);
   static const coin = Color(0xFFFFC93C);
 
   /// Turbo Pass violet, deliberately away from the amber the coin economy
   /// owns so a paid unlock never reads as something coins could buy.
-  static const pass = Color(0xFF9B6BFF);
-  static const passDark = Color(0xFF5B2BE0);
-  static const panel = Color(0xCC0B1024);
+  static const pass = Color(0xFFC5D7F0);
+  static const passDark = Color(0xFF809FC9);
+  static const panel = Color(0xED101D30);
   static const panelBorder = Color(0x33FFFFFF);
 
   static TextStyle title(double size) => TextStyle(
-        fontSize: size,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 2,
-        height: 1.05,
-        color: Colors.white,
-        shadows: const [
-          Shadow(color: Color(0xAA000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
-      );
+    fontSize: size,
+    fontWeight: FontWeight.w900,
+    letterSpacing: -0.8,
+    fontStyle: FontStyle.italic,
+    height: 1.05,
+    color: Colors.white,
+    shadows: const [
+      Shadow(color: Color(0xAA000000), blurRadius: 12, offset: Offset(0, 4)),
+    ],
+  );
 
   static const label = TextStyle(
     color: Colors.white70,
     fontSize: 13,
-    letterSpacing: 1.2,
+    letterSpacing: 0.2,
     fontWeight: FontWeight.w600,
   );
 
@@ -42,13 +43,17 @@ class UiTheme {
   );
 
   static BoxDecoration panelDecoration({double radius = 20}) => BoxDecoration(
-        color: panel,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: panelBorder),
-        boxShadow: const [
-          BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 10)),
-        ],
-      );
+    color: panel,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: panelBorder),
+    boxShadow: const [
+      BoxShadow(
+        color: Color(0x66000000),
+        blurRadius: 24,
+        offset: Offset(0, 10),
+      ),
+    ],
+  );
 }
 
 /// Fills the available height so `Spacer`s inside [child] spread the content
@@ -69,8 +74,9 @@ class FillOrScroll extends StatelessWidget {
       builder: (context, constraints) => SingleChildScrollView(
         padding: padding,
         child: ConstrainedBox(
-          constraints:
-              BoxConstraints(minHeight: constraints.maxHeight - padding.vertical),
+          constraints: BoxConstraints(
+            minHeight: constraints.maxHeight - padding.vertical,
+          ),
           child: IntrinsicHeight(child: child),
         ),
       ),
@@ -108,9 +114,14 @@ class InfoChip extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: fontSize + 3),
           const SizedBox(width: 6),
-          Text(text,
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.w800, fontSize: fontSize)),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: fontSize,
+            ),
+          ),
         ],
       ),
     );
@@ -141,14 +152,20 @@ class PrimaryButton extends StatelessWidget {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 26),
-      label: Text(label,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.4,
+        ),
+      ),
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         foregroundColor: foreground,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        elevation: 10,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 2,
         shadowColor: color.withValues(alpha: 0.6),
       ),
     );
@@ -176,15 +193,21 @@ class GhostButton extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 22),
-      label: Text(label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 1)),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1,
+        ),
+      ),
       style: OutlinedButton.styleFrom(
         foregroundColor: color ?? Colors.white,
         side: BorderSide(
           color: color?.withValues(alpha: 0.6) ?? Colors.white38,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
@@ -193,7 +216,9 @@ class GhostButton extends StatelessWidget {
 /// Slim call to action for the Turbo Pass, used where a third full-width
 /// button would crowd the screen.
 class PassBanner extends StatelessWidget {
-  const PassBanner({super.key, required this.onTap});
+  const PassBanner({super.key, required this.onTap, this.message});
+
+  final String? message;
 
   final VoidCallback onTap;
 
@@ -214,19 +239,28 @@ class PassBanner extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.workspace_premium_rounded,
-                  size: 18, color: UiTheme.pass),
+              const Icon(
+                Icons.workspace_premium_rounded,
+                size: 18,
+                color: UiTheme.pass,
+              ),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  'TURBO PASS  ·  ${CarCatalog.premium.length} EXCLUSIVE CARS',
-                  overflow: TextOverflow.ellipsis,
-                  style: UiTheme.label.copyWith(color: Colors.white, fontSize: 12),
+                  message ??
+                      'Turbo Pass: ${CarCatalog.premium.length} cars + 2× run coins',
+                  style: UiTheme.label.copyWith(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.chevron_right_rounded,
-                  size: 18, color: UiTheme.pass),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: UiTheme.pass,
+              ),
             ],
           ),
         ),

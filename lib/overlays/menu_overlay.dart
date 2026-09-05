@@ -5,6 +5,7 @@ import '../game/traffic_racer_game.dart';
 import '../progression/mission.dart';
 import '../progression/streak.dart';
 import 'ui_theme.dart';
+import 'car_showcase.dart';
 
 /// Title screen: name, best score, coins and streak, today's missions,
 /// start/garage buttons and three small toggles.
@@ -52,12 +53,15 @@ class _MenuBody extends StatelessWidget {
     return Column(
       children: [
         const Spacer(),
-        ShaderMask(
-          shaderCallback: (b) => const LinearGradient(
-            colors: [UiTheme.accent, UiTheme.accentDark],
-          ).createShader(b),
-          child: Text('TURBO\nTRAFFIC RUSH',
-              textAlign: TextAlign.center, style: UiTheme.title(42)),
+        Text(
+          'TURBO TRAFFIC RUSH',
+          textAlign: TextAlign.center,
+          style: UiTheme.title(30),
+        ),
+        const SizedBox(height: 14),
+        ListenableBuilder(
+          listenable: progression.garage,
+          builder: (_, _) => CarShowcase(skin: progression.garage.selectedSkin),
         ),
         const SizedBox(height: 10),
         ValueListenableBuilder<int>(
@@ -69,8 +73,10 @@ class _MenuBody extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         ListenableBuilder(
-          listenable:
-              Listenable.merge([progression.garage, progression.streak.streak]),
+          listenable: Listenable.merge([
+            progression.garage,
+            progression.streak.streak,
+          ]),
           builder: (_, _) => _WalletRow(
             coins: progression.garage.coins,
             streak: progression.streak.streak.value,
@@ -83,10 +89,13 @@ class _MenuBody extends StatelessWidget {
               _MissionsPanel(missions: progression.missions.missions),
         ),
         const Spacer(flex: 2),
-        PrimaryButton(
-          label: 'START',
-          icon: Icons.play_arrow_rounded,
-          onPressed: game.startRun,
+        SizedBox(
+          width: double.infinity,
+          child: PrimaryButton(
+            label: 'START',
+            icon: Icons.play_arrow_rounded,
+            onPressed: game.startRun,
+          ),
         ),
         const SizedBox(height: 10),
         GhostButton(
@@ -104,12 +113,7 @@ class _MenuBody extends StatelessWidget {
                   color: UiTheme.pass,
                   fontSize: 13,
                 )
-              : GhostButton(
-                  label: 'TURBO PASS',
-                  icon: Icons.workspace_premium_rounded,
-                  color: UiTheme.pass,
-                  onPressed: game.openPaywall,
-                ),
+              : PassBanner(onTap: game.openPaywall),
         ),
         const SizedBox(height: 16),
         Row(
@@ -195,7 +199,7 @@ class _MissionsPanel extends StatelessWidget {
             children: [
               const Icon(Icons.flag_rounded, size: 16, color: Colors.white70),
               const SizedBox(width: 6),
-              Text('DAILY MISSIONS', style: UiTheme.label),
+              Flexible(child: Text('Daily missions', style: UiTheme.label)),
               const Spacer(),
               Text(
                 '${missions.where((m) => m.completed).length}/${missions.length}',
@@ -225,8 +229,11 @@ class _MissionRow extends StatelessWidget {
     final color = done ? UiTheme.accent : Colors.white;
     return Row(
       children: [
-        Icon(done ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-            size: 20, color: done ? UiTheme.accent : Colors.white38),
+        Icon(
+          done ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+          size: 20,
+          color: done ? UiTheme.accent : Colors.white38,
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -235,16 +242,20 @@ class _MissionRow extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(mission.description,
-                        style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            decoration:
-                                done ? TextDecoration.lineThrough : null)),
+                    child: Text(
+                      mission.description,
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        decoration: done ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
                   ),
-                  Text(done ? 'DONE' : mission.progressLabel,
-                      style: UiTheme.label.copyWith(fontSize: 11)),
+                  Text(
+                    done ? 'DONE' : mission.progressLabel,
+                    style: UiTheme.label.copyWith(fontSize: 11),
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -261,9 +272,14 @@ class _MissionRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Text('+${mission.coinReward}',
-            style: const TextStyle(
-                color: UiTheme.coin, fontWeight: FontWeight.w800, fontSize: 13)),
+        Text(
+          '+${mission.coinReward}',
+          style: const TextStyle(
+            color: UiTheme.coin,
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+          ),
+        ),
       ],
     );
   }
@@ -294,8 +310,10 @@ class _Toggle extends StatelessWidget {
         child: IconButton(
           onPressed: onTap,
           iconSize: 24,
-          icon: Icon(on ? onIcon : offIcon,
-              color: on ? UiTheme.accent : Colors.white54),
+          icon: Icon(
+            on ? onIcon : offIcon,
+            color: on ? UiTheme.accent : Colors.white54,
+          ),
         ),
       ),
     );

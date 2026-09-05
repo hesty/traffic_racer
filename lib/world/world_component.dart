@@ -54,7 +54,7 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
     canvas.drawRect(Rect.fromLTWH(0, horizonY, w, h - horizonY),
         _fill..color = palette.grassDark);
 
-    final cameraX = game.player.offset * GameConfig.roadWidth * cameraFollow;
+    final cameraX = game.cameraOffset * GameConfig.roadWidth * cameraFollow;
     final playerZWorld = game.position + projector.playerZ;
     final cameraY = track.heightAt(playerZWorld) + GameConfig.cameraHeight;
 
@@ -355,7 +355,7 @@ class WorldComponent extends Component with HasGameReference<TrafficRacerGame> {
         width: width * skin.kind.widthFactor,
         kind: skin.kind,
         color: skin.color,
-        tilt: crashed ? 0.35 : game.player.steer * 0.07,
+        tilt: crashed ? 0.35 : game.player.lean * 0.09,
         braking: crashed,
         lightsAlpha: palette.headlightAlpha,
         isPlayer: true,

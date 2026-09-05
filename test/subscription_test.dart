@@ -51,14 +51,16 @@ void main() {
   group('CoinFormula', () {
     test('the pass multiplies a run on top of the streak', () {
       final plain = CoinFormula.forRun(
-          distanceMeters: 2000,
-          nearMisses: 10,
-          streakMultiplier: 1);
+        distanceMeters: 2000,
+        nearMisses: 10,
+        streakMultiplier: 1,
+      );
       final withPass = CoinFormula.forRun(
-          distanceMeters: 2000,
-          nearMisses: 10,
-          streakMultiplier: 1,
-          passMultiplier: 2);
+        distanceMeters: 2000,
+        nearMisses: 10,
+        streakMultiplier: 1,
+        passMultiplier: 2,
+      );
       expect(withPass, plain * 2);
     });
   });
@@ -94,12 +96,15 @@ void main() {
       expect(g.selectedId, CarCatalog.defaultId);
     });
 
-    test('a saved pass selection survives the load that precedes the store', () {
-      final saved = Garage(unlockedIds: const {}, selectedId: premium.id);
-      final copy = Garage.fromJson(saved.toJson());
-      expect(copy.selectedId, premium.id);
-      expect(copy.dropUndrivable(passActive: false), isTrue);
-    });
+    test(
+      'a saved pass selection survives the load that precedes the store',
+      () {
+        final saved = Garage(unlockedIds: const {}, selectedId: premium.id);
+        final copy = Garage.fromJson(saved.toJson());
+        expect(copy.selectedId, premium.id);
+        expect(copy.dropUndrivable(passActive: false), isTrue);
+      },
+    );
   });
 
   group('GarageService', () {
@@ -126,6 +131,23 @@ void main() {
   });
 
   group('PaywallPromptService', () {
+    test(
+      'daily test drive persists and becomes available the next day',
+      () async {
+        var now = DateTime(2026, 9, 5);
+        final first = PaywallPromptService(now: () => now);
+        await first.load();
+        expect(first.canTestDrive, isTrue);
+        expect(first.claimTestDrive(), isTrue);
+        expect(first.claimTestDrive(), isFalse);
+        final reloaded = PaywallPromptService(now: () => now);
+        await reloaded.load();
+        expect(reloaded.canTestDrive, isFalse);
+        now = now.add(const Duration(days: 1));
+        expect(reloaded.claimTestDrive(), isTrue);
+      },
+    );
+
     test('prompts exactly once, on the configured run', () async {
       final prompt = PaywallPromptService();
       await prompt.load();

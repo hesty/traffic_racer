@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/game_config.dart';
+import '../progression/day_key.dart';
 
 /// Decides when the paywall may show itself unprompted.
 ///
@@ -9,6 +10,19 @@ import '../core/game_config.dart';
 /// [GameConfig.paywallAutoPromptAfterRuns] runs they see the paywall a single
 /// time, and never again unless they open it themselves.
 class PaywallPromptService {
+  PaywallPromptService({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
+  int? _previewDay;
+  bool get canTestDrive => _previewDay != dayKeyOf(_now());
+
+  bool claimTestDrive() {
+    if (!canTestDrive) return false;
+    _previewDay = dayKeyOf(_now());
+    _prefs?.setInt('pass_preview_day', _previewDay!);
+    return true;
+  }
+
   static const _runsKey = 'runs_completed';
   static const _shownKey = 'paywall_auto_shown';
 
@@ -23,6 +37,7 @@ class PaywallPromptService {
     try {
       _prefs = await SharedPreferences.getInstance();
       _runsCompleted = _prefs!.getInt(_runsKey) ?? 0;
+      _previewDay = _prefs!.getInt('pass_preview_day');
       _autoShown = _prefs!.getBool(_shownKey) ?? false;
     } catch (e) {
       debugPrint('Paywall prompt load failed: $e');

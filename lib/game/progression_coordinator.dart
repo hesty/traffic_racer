@@ -18,6 +18,7 @@ class RunSummary {
     required this.streakDays,
     required this.streakMultiplier,
     required this.passMultiplier,
+    this.potentialPassBonus = 0,
   });
 
   /// Coins from distance and near misses (streak applied).
@@ -30,9 +31,9 @@ class RunSummary {
   final int streakDays;
   final double streakMultiplier;
 
-  /// Coin multiplier the Turbo Pass contributed; 1 without a pass, and also 1
-  /// while [GameConfig.passCoinMultiplier] leaves the pass purely cosmetic.
+  /// Coin multiplier the Turbo Pass contributed; 1 without a pass.
   final double passMultiplier;
+  final int potentialPassBonus;
 
   int get totalCoins => runCoins + missionCoins;
 }
@@ -42,10 +43,10 @@ class RunSummary {
 /// overlays read the services directly.
 class ProgressionCoordinator {
   ProgressionCoordinator({DateTime Function()? now})
-      : missions = MissionsService(now: now),
-        streak = StreakService(now: now),
-        purchases = PurchaseService(),
-        paywallPrompt = PaywallPromptService() {
+    : missions = MissionsService(now: now),
+      streak = StreakService(now: now),
+      purchases = PurchaseService(),
+      paywallPrompt = PaywallPromptService(now: now) {
     garage = GarageService(passActive: () => purchases.isActive);
     // The garage lends out the pass-only cars, so it has to repaint and
     // possibly drop its selection whenever the entitlement moves.
@@ -123,6 +124,15 @@ class ProgressionCoordinator {
     paywallDue = paywallPrompt.onRunFinished(passActive: purchases.isActive);
     return RunSummary(
       runCoins: runCoins,
+      potentialPassBonus: purchases.isActive
+          ? 0
+          : CoinFormula.forRun(
+                  distanceMeters: stats.distanceMeters,
+                  nearMisses: stats.nearMisses,
+                  streakMultiplier: streak.coinMultiplier,
+                  passMultiplier: GameConfig.passCoinMultiplier,
+                ) -
+                runCoins,
       missionCoins: _missionCoinsThisRun,
       missionsCompleted: List.of(_completedThisRun),
       allMissionsBonus: _allBonusThisRun,
@@ -136,9 +146,9 @@ class ProgressionCoordinator {
   int previewCoins(RunStats stats) => _runCoins(stats) + _missionCoinsThisRun;
 
   int _runCoins(RunStats stats) => CoinFormula.forRun(
-        distanceMeters: stats.distanceMeters,
-        nearMisses: stats.nearMisses,
-        streakMultiplier: streak.coinMultiplier,
-        passMultiplier: purchases.coinMultiplier,
-      );
+    distanceMeters: stats.distanceMeters,
+    nearMisses: stats.nearMisses,
+    streakMultiplier: streak.coinMultiplier,
+    passMultiplier: purchases.coinMultiplier,
+  );
 }

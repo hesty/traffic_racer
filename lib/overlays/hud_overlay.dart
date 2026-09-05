@@ -48,6 +48,13 @@ class HudOverlay extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
+                if (game.isTestDrive)
+                  const InfoChip(
+                    icon: Icons.sports_motorsports_rounded,
+                    text: 'Free test drive',
+                    color: UiTheme.pass,
+                    fontSize: 12,
+                  ),
                 if (hud.combo > 1) _ComboBanner(hud: hud),
                 const Spacer(),
                 _PowerUpRow(progress: hud.powerUpProgress),
@@ -100,14 +107,25 @@ class _ScoreBlock extends StatelessWidget {
             fontSize: 38,
             fontWeight: FontWeight.w900,
             letterSpacing: 1,
-            shadows: [Shadow(color: Colors.black87, blurRadius: 10, offset: Offset(0, 3))],
+            shadows: [
+              Shadow(
+                color: Colors.black87,
+                blurRadius: 10,
+                offset: Offset(0, 3),
+              ),
+            ],
           ),
         ),
         if (hud.bestScore > 0)
-          Text('BEST ${hud.bestScore}',
-              style: UiTheme.label.copyWith(
-                  fontSize: 11,
-                  color: hud.score > hud.bestScore ? UiTheme.accent : Colors.white60)),
+          Text(
+            'BEST ${hud.bestScore}',
+            style: UiTheme.label.copyWith(
+              fontSize: 11,
+              color: hud.score > hud.bestScore
+                  ? UiTheme.accent
+                  : Colors.white60,
+            ),
+          ),
       ],
     );
   }
@@ -129,7 +147,13 @@ class _ComboBanner extends StatelessWidget {
             fontSize: 22 + (hud.combo.clamp(0, 8)) * 1.2,
             fontWeight: FontWeight.w900,
             letterSpacing: 2,
-            shadows: const [Shadow(color: Colors.black87, blurRadius: 8, offset: Offset(0, 2))],
+            shadows: const [
+              Shadow(
+                color: Colors.black87,
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 4),
@@ -158,14 +182,15 @@ class _PowerUpRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (progress.isEmpty) return const SizedBox(height: 44);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      runSpacing: 8,
       children: [
         for (final entry in progress.entries)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
             child: Container(
-              width: 92,
+              width: 128,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: entry.key.color.withValues(alpha: 0.22),
@@ -180,11 +205,14 @@ class _PowerUpRow extends StatelessWidget {
                     children: [
                       Icon(entry.key.icon, color: entry.key.color, size: 16),
                       const SizedBox(width: 4),
-                      Text(entry.key.label,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12)),
+                      Text(
+                        entry.key.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -224,16 +252,22 @@ class _Speedometer extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text('$kmh',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  height: 1)),
+          Text(
+            '$kmh',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
+          ),
           const SizedBox(width: 4),
           const Padding(
             padding: EdgeInsets.only(bottom: 3),
-            child: Text('km/h', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            child: Text(
+              'km/h',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
           ),
         ],
       ),

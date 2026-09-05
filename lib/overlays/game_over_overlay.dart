@@ -37,20 +37,24 @@ class GameOverOverlay extends StatelessWidget {
                 child: Text('WRECKED', style: UiTheme.title(40)),
               ),
               const SizedBox(height: 20),
-              Text('${stats.score}',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 72,
-                      fontWeight: FontWeight.w900,
-                      height: 1)),
+              Text(
+                '${stats.score}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 72,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
               const SizedBox(height: 6),
               Text(
                 game.isNewRecord
                     ? 'NEW BEST'
                     : 'BEST  ${game.highScores.bestScore.value}',
                 style: UiTheme.label.copyWith(
-                    fontSize: 14,
-                    color: game.isNewRecord ? UiTheme.accent : Colors.white70),
+                  fontSize: 14,
+                  color: game.isNewRecord ? UiTheme.accent : Colors.white70,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -69,7 +73,15 @@ class GameOverOverlay extends StatelessWidget {
                     ? const SizedBox.shrink()
                     : Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: PassBanner(onTap: game.openPaywall),
+                        child: PassBanner(
+                          onTap: game.openPaywall,
+                          message: game.lastTestDriveSkin != null
+                              ? 'Enjoyed ${game.lastTestDriveSkin!.label}? Keep driving it with Turbo Pass.'
+                              : summary != null &&
+                                    summary.potentialPassBonus > 0
+                              ? 'This run with Turbo Pass: +${summary.potentialPassBonus} extra coins. See benefits'
+                              : null,
+                        ),
                       ),
               ),
               PrimaryButton(
@@ -127,7 +139,10 @@ class _Rewards extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             '${summary.streakDays} DAY STREAK  ·  x$multiplier COINS',
-            style: UiTheme.label.copyWith(color: UiTheme.accentDark, fontSize: 12),
+            style: UiTheme.label.copyWith(
+              color: UiTheme.accentDark,
+              fontSize: 12,
+            ),
           ),
         ],
         if (summary.passMultiplier > 1) ...[
@@ -180,14 +195,21 @@ class _BonusLine extends StatelessWidget {
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
           Flexible(
-            child: Text(text.toUpperCase(),
-                overflow: TextOverflow.ellipsis,
-                style: UiTheme.label.copyWith(color: Colors.white, fontSize: 12)),
+            child: Text(
+              text.toUpperCase(),
+              overflow: TextOverflow.ellipsis,
+              style: UiTheme.label.copyWith(color: Colors.white, fontSize: 12),
+            ),
           ),
           const SizedBox(width: 8),
-          Text('+$reward',
-              style: const TextStyle(
-                  color: UiTheme.coin, fontWeight: FontWeight.w800, fontSize: 13)),
+          Text(
+            '+$reward',
+            style: const TextStyle(
+              color: UiTheme.coin,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
