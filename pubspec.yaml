@@ -3,7 +3,7 @@ description: "Turbo Traffic Rush - pseudo-3D arcade traffic racer built with Flu
 
 publish_to: 'none'
 
-version: 2.0.1+10
+version: 2.0.2+11
 
 environment:
   sdk: ^3.12.0
