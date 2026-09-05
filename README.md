@@ -27,6 +27,8 @@ Turbo Traffic Rush is a portrait, pseudo-3D arcade traffic racer built with **Fl
 - **Persistent best score & distance**, sound / music / tilt toggles, pause and app-lifecycle handling.
 - **Daily missions:** three goals per calendar day (deterministic, no server) that pay coins; finish all three for a bonus.
 - **Garage & coins:** every run earns coins from distance and near misses; spend them on ten unlockable car bodies and colours, previewed exactly as they look on the road.
+- **Turbo Pass:** four exclusive cars with racing details, 2× run coins that stack with streaks, and one free premium-car test drive per calendar day. Racing stays free; mission rewards are unchanged.
+- **Consistent simulation:** 120 Hz fixed steps, swept collisions, damped camera and steering lean; equal elapsed time at 15–120 FPS.
 - **Daily streak:** consecutive days played multiply coin income (up to +50%).
 
 ### Screenshots
@@ -127,6 +129,8 @@ Turbo Traffic Rush, **Flutter** ve **Flame** motoruyla geliştirilmiş dikey, ps
 - **Kalıcı en iyi skor ve mesafe**, ses / müzik / tilt anahtarları, duraklatma ve uygulama yaşam döngüsü yönetimi.
 - **Günlük görevler:** takvim gününe göre belirlenen (sunucusuz) üç hedef coin öder; üçünü de bitirince bonus.
 - **Garaj ve coin:** her tur mesafe ve near-miss'ten coin kazandırır; on farklı açılabilir gövde/renk, yolda göründüğü gibi önizlenir.
+- **Turbo Pass:** yarış detaylı dört özel araç, seri bonusuyla birleşen 2× tur coin kazancı ve her takvim günü bir ücretsiz premium araç test sürüşü. Yarış ücretsiz kalır; görev ödülleri değişmez.
+- **Tutarlı simülasyon:** 120 Hz sabit adım, hareket boyunca çarpışma kontrolü, yumuşak kamera takibi ve direksiyon eğimi; 15–120 FPS arasında aynı oyun süresi.
 - **Günlük seri:** art arda oynanan günler coin kazancını çarpar (en fazla +%50).
 
 ### Ekran Görüntüleri

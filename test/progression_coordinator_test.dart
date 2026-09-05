@@ -44,7 +44,10 @@ void main() {
     final paidSummary = paid.onRunFinished(stats);
     expect(paidSummary.runCoins, freeSummary.runCoins * 2);
     expect(paidSummary.missionCoins, freeSummary.missionCoins);
-    expect(freeSummary.potentialPassBonus, paidSummary.runCoins - freeSummary.runCoins);
+    expect(
+      freeSummary.potentialPassBonus,
+      paidSummary.runCoins - freeSummary.runCoins,
+    );
     expect(paidSummary.potentialPassBonus, 0);
   });
 
@@ -56,11 +59,15 @@ void main() {
     p.onRunStarted();
     expect(p.streak.streak.value.count, 1);
     p.onRunProgress(snapshot(distance: 2400, nearMisses: 5, seconds: 60));
-    final summary =
-        p.onRunFinished(snapshot(distance: 2400, nearMisses: 5, seconds: 60));
+    final summary = p.onRunFinished(
+      snapshot(distance: 2400, nearMisses: 5, seconds: 60),
+    );
 
-    expect(summary.runCoins,
-        (2400 * GameConfig.coinsPerMeter).round() + 5 * GameConfig.coinsPerNearMiss);
+    expect(
+      summary.runCoins,
+      (2400 * GameConfig.coinsPerMeter).round() +
+          5 * GameConfig.coinsPerNearMiss,
+    );
     expect(p.garage.coins, summary.totalCoins);
 
     // Everything survives a reload from the same prefs.
@@ -94,7 +101,10 @@ void main() {
     expect(p.justCompleted.length, GameConfig.missionsPerDay);
     expect(p.allBonusJustEarned, isTrue);
     final rewards = p.justCompleted.fold<int>(0, (a, m) => a + m.coinReward);
-    expect(p.garage.coins - before, rewards + GameConfig.missionAllCompleteBonus);
+    expect(
+      p.garage.coins - before,
+      rewards + GameConfig.missionAllCompleteBonus,
+    );
 
     p.onRunProgress(huge);
     expect(p.justCompleted, isEmpty);
@@ -111,23 +121,27 @@ void main() {
     await service.load();
     final first = [for (final m in service.missions) (m.kind, m.target)];
     service.onRunProgress(
-        const RunStats(
-          distanceMeters: 100000,
-          nearMisses: 1000,
-          bestCombo: 100,
-          overtakes: 1000,
-          powerUpsCollected: 100,
-          level: 50,
-          surviveSeconds: 10000,
-        ),
-        <Mission>[]);
+      const RunStats(
+        distanceMeters: 100000,
+        nearMisses: 1000,
+        bestCombo: 100,
+        overtakes: 1000,
+        powerUpsCollected: 100,
+        level: 50,
+        surviveSeconds: 10000,
+      ),
+      <Mission>[],
+    );
     expect(service.allCompleted, isTrue);
 
     today = DateTime(2026, 9, 4, 0, 5);
     service.onRunStarted();
     expect(service.allCompleted, isFalse);
     expect(service.missions.every((m) => m.progress == 0), isTrue);
-    expect([for (final m in service.missions) (m.kind, m.target)] != first, isTrue);
+    expect(
+      [for (final m in service.missions) (m.kind, m.target)] != first,
+      isTrue,
+    );
   });
 
   test('garage purchase goes through the wallet', () async {

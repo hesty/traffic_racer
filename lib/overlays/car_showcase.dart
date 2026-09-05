@@ -58,20 +58,15 @@ class CarShowcase extends StatelessWidget {
             children: [
               Positioned(
                 bottom: 2,
-                child: Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.diagonal3Values(1, 0.22, 1),
-                  child: Container(
-                    width: 220,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: UiTheme.pass.withValues(alpha: 0.4),
-                        width: 3,
-                      ),
-                      color: Colors.white.withValues(alpha: 0.04),
+                child: Container(
+                  width: 190,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: UiTheme.pass.withValues(alpha: 0.3),
                     ),
+                    color: Colors.white.withValues(alpha: 0.04),
                   ),
                 ),
               ),

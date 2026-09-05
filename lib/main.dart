@@ -24,11 +24,13 @@ Future<void> main() async {
   final progression = ProgressionCoordinator();
   await Future.wait([settings.load(), highScores.load(), progression.load()]);
 
-  runApp(TurboTrafficRushApp(
-    settings: settings,
-    highScores: highScores,
-    progression: progression,
-  ));
+  runApp(
+    TurboTrafficRushApp(
+      settings: settings,
+      highScores: highScores,
+      progression: progression,
+    ),
+  );
 }
 
 class TurboTrafficRushApp extends StatelessWidget {

@@ -41,9 +41,13 @@ class GarageOverlay extends StatelessWidget {
                       tooltip: 'Back',
                     ),
                     const SizedBox(width: 4),
-                    Expanded(child: FittedBox(fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text('GARAGE', style: UiTheme.title(26)))),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text('GARAGE', style: UiTheme.title(26)),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     InfoChip(
                       icon: Icons.monetization_on_rounded,
@@ -218,15 +222,17 @@ class _Tag extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 4),
-        Flexible(child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w800,
-            fontSize: 13,
+        Flexible(
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
