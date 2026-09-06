@@ -49,4 +49,20 @@ void main() {
     manager.update(0, playerZ: GameConfig.maxSpawnAhead + GameConfig.despawnBehind * 2);
     expect(manager.vehicles, isEmpty);
   });
+
+  test('clear empties all vehicles', () {
+    final track = Track.flat(400);
+    final manager = TrafficManager(track, random: Random(5));
+    manager.maintain(playerZ: 0, level: 8);
+    expect(manager.vehicles, isNotEmpty);
+    manager.clear();
+    expect(manager.vehicles, isEmpty);
+  });
+
+  test('zero-level maintains a minimum of five vehicles', () {
+    final track = Track.flat(400);
+    final manager = TrafficManager(track, random: Random(7));
+    manager.maintain(playerZ: 0, level: 0);
+    expect(manager.vehicles.length, 5);
+  });
 }
