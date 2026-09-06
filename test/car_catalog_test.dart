@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:turbo_traffic_rush/progression/car_catalog.dart';
 import 'package:turbo_traffic_rush/entities/traffic_vehicle.dart';
-import 'package:flutter/material.dart';
 
 void main() {
   group('CarCatalog', () {

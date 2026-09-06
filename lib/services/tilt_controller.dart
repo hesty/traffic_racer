@@ -11,9 +11,8 @@ import 'package:sensors_plus/sensors_plus.dart';
 class TiltController {
   TiltController({
     required this.onLaneChange,
-    Stream<AccelerometerEvent> Function({Duration samplingPeriod})
-        streamFactory = accelerometerEventStream,
-  }) : _streamFactory = streamFactory;
+    this._streamFactory = accelerometerEventStream,
+  });
 
   final void Function(int direction) onLaneChange;
   final Stream<AccelerometerEvent> Function(

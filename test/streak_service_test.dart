@@ -7,18 +7,9 @@ import 'package:turbo_traffic_rush/services/streak_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  late List<SharedPreferences> stores;
-
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    stores = [];
   });
-
-  StreakService makeService(DateTime today) {
-    final service = StreakService(now: () => today);
-    stores.add(SharedPreferences.getInstance() as SharedPreferences);
-    return service;
-  }
 
   test('load restores a saved streak', () async {
     SharedPreferences.setMockInitialValues({

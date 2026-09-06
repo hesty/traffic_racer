@@ -5,7 +5,6 @@
 /// them. A `--dart-define` overrides the baked-in default.
 abstract final class StoreLinks {
 
-  // TODO(monetisation): point these at the real pages before submitting.
   static const String terms = String.fromEnvironment(
     'TERMS_URL',
     defaultValue: 'https://hesty.dev/turbo-traffic-rush/terms',
