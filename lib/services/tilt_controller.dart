@@ -9,9 +9,15 @@ import 'package:sensors_plus/sensors_plus.dart';
 /// controller then re-arms only after the phone returns under
 /// [releaseThreshold], so holding a tilt never spams changes.
 class TiltController {
-  TiltController({required this.onLaneChange});
+  TiltController({
+    required this.onLaneChange,
+    Stream<AccelerometerEvent> Function({Duration samplingPeriod})
+        streamFactory = accelerometerEventStream,
+  }) : _streamFactory = streamFactory;
 
   final void Function(int direction) onLaneChange;
+  final Stream<AccelerometerEvent> Function(
+      {Duration samplingPeriod}) _streamFactory;
 
   static const double triggerThreshold = 2.4; // m/s^2 along the x axis
   static const double releaseThreshold = 1.1;
@@ -24,7 +30,7 @@ class TiltController {
   void start() {
     if (_sub != null) return;
     try {
-      _sub = accelerometerEventStream(
+      _sub = _streamFactory(
         samplingPeriod: const Duration(milliseconds: 40),
       ).listen(_onEvent, onError: (Object e) {
         debugPrint('Accelerometer unavailable: $e');

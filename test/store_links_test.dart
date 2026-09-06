@@ -9,9 +9,9 @@ void main() {
     expect(StoreLinks.privacy, startsWith('https://'));
   });
 
-  test('RevenueCatKeys.forPlatform returns an empty string on desktop', () {
-    // defaultTargetPlatform is TestPlatform in flutter_test
-    expect(RevenueCatKeys.forPlatform(), isEmpty);
+  test('RevenueCatKeys.forPlatform returns android key in test env', () {
+    // flutter_test runs on TargetPlatform.android by default
+    expect(RevenueCatKeys.forPlatform(), equals(RevenueCatKeys.android));
   });
 
   test('RevenueCatKeys.android and ios have non-empty default values', () {

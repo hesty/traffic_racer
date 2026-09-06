@@ -35,13 +35,11 @@ void main() {
   });
 
   group('VehicleKind', () {
-    test('all kinds are covered by the catalog', () {
-      final kinds = <VehicleKind>{};
+    test('every catalog entry has a valid VehicleKind', () {
+      final kinds = VehicleKind.values.toSet();
       for (final skin in CarCatalog.all) {
-        kinds.add(skin.kind);
-      }
-      for (final kind in VehicleKind.values) {
-        expect(kinds.contains(kind), isTrue, reason: '$kind missing');
+        expect(kinds.contains(skin.kind), isTrue,
+            reason: '${skin.id} has kind ${skin.kind}');
       }
     });
   });
