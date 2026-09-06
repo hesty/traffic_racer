@@ -5,8 +5,7 @@ import '../entities/traffic_vehicle.dart';
 
 /// Draws stylised rear-view vehicles with plain canvas primitives, so every
 /// car scales crisply at any distance without sprite assets.
-class VehiclePainter {
-  VehiclePainter._();
+abstract final class VehiclePainter {
 
   /// Draws a vehicle whose rear bumper sits centred on [bottomCenter] with
   /// the given on-screen [width].

@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import '../progression/car_catalog.dart';
 
 /// Shared styling for the Flutter overlays drawn above the game.
-class UiTheme {
-  UiTheme._();
+abstract final class UiTheme {
 
   static const background = Color(0xFF101F25);
   static const surface = Color(0xFF1B3038);

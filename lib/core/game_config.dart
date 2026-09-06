@@ -2,8 +2,7 @@
 ///
 /// World units are arbitrary: the road is `roadWidth` wide (half-width from
 /// the centre line), and the track is made of segments of `segmentLength`.
-class GameConfig {
-  GameConfig._();
+abstract final class GameConfig {
 
   // --- World geometry ---------------------------------------------------
   static const double segmentLength = 200;

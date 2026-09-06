@@ -12,8 +12,7 @@ import 'package:flutter/foundation.dart';
 /// ```
 /// flutter build ios --release --dart-define=RC_IOS_KEY=appl_xxx
 /// ```
-class RevenueCatKeys {
-  RevenueCatKeys._();
+abstract final class RevenueCatKeys {
 
   // RevenueCat project "Turbo Traffic Rush" (proj66719fea). An empty key keeps
   // the pass offline (see [PurchaseService]), so the game still runs on a

@@ -15,8 +15,7 @@ class Wallet {
 
 /// Coins paid out for a run. Mission rewards are paid separately the moment a
 /// mission completes, so they are not part of this formula.
-class CoinFormula {
-  CoinFormula._();
+abstract final class CoinFormula {
 
   static int forRun({
     required int distanceMeters,

@@ -5,8 +5,7 @@ import 'mission.dart';
 
 /// Rolls the day's missions. Deterministic per calendar day, so every device
 /// agrees on the goals without a server.
-class MissionCatalog {
-  MissionCatalog._();
+abstract final class MissionCatalog {
 
   static List<Mission> forDay(int dayKey) {
     final rng = math.Random(dayKey);

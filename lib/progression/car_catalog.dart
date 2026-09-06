@@ -30,8 +30,7 @@ class CarSkin {
 /// Every car the garage can show. The first entry is the free default and
 /// matches the original hardcoded player car; the [premium] entries only ride
 /// while the Turbo Pass is active.
-class CarCatalog {
-  CarCatalog._();
+abstract final class CarCatalog {
 
   static const String defaultId = 'sedan_amber';
 

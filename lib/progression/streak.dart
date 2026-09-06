@@ -25,8 +25,7 @@ class Streak {
       );
 }
 
-class StreakCalculator {
-  StreakCalculator._();
+abstract final class StreakCalculator {
 
   /// The streak after playing on [now]: unchanged on the same day, one longer
   /// the day after the last play, otherwise back to one.
