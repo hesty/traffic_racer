@@ -1,10 +1,10 @@
-// Regenerates the iOS app icon set from `AppIconPainter`.
+// Regenerates the iOS and Android launcher icons from `AppIconPainter`.
 //
 //   flutter test tool/generate_app_icon.dart
 //
 // Every size is rendered from the vector painter rather than downscaled from
-// one bitmap, and written as an opaque 24-bit PNG: App Store Connect rejects a
-// marketing icon that carries an alpha channel.
+// one bitmap. Opaque images are written as 24-bit PNGs: App Store Connect
+// rejects a marketing icon that carries an alpha channel.
 
 import 'dart:convert';
 import 'dart:io';
@@ -15,10 +15,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'app_icon_painter.dart';
 
-const _iconSetDir = 'ios/Runner/Assets.xcassets/AppIcon.appiconset';
+typedef IconPainter = void Function(ui.Canvas canvas, double size);
 
-/// Every image the icon set references, keyed by output file name.
-const Map<String, int> _outputs = {
+const _iconSetDir = 'ios/Runner/Assets.xcassets/AppIcon.appiconset';
+const _androidResDir = 'android/app/src/main/res';
+
+/// Every image the iOS icon set references, keyed by output file name.
+const Map<String, int> _iosOutputs = {
   'Icon-App-20x20@1x.png': 20,
   'Icon-App-20x20@2x.png': 40,
   'Icon-App-20x20@3x.png': 60,
@@ -36,6 +39,15 @@ const Map<String, int> _outputs = {
   'Icon-App-1024x1024@1x.png': 1024,
 };
 
+/// Android density buckets and their scale against mdpi.
+const Map<String, double> _densities = {
+  'mdpi': 1,
+  'hdpi': 1.5,
+  'xhdpi': 2,
+  'xxhdpi': 3,
+  'xxxhdpi': 4,
+};
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -43,8 +55,9 @@ void main() {
     final dir = Directory(_iconSetDir);
     expect(dir.existsSync(), isTrue, reason: 'run from the repo root');
 
-    for (final entry in _outputs.entries) {
-      final bytes = await _renderIcon(entry.value);
+    for (final entry in _iosOutputs.entries) {
+      final bytes = await _renderPng(entry.value, AppIconPainter.paintSquare,
+          opaque: true);
       File('$_iconSetDir/${entry.key}').writeAsBytesSync(bytes);
     }
 
@@ -54,29 +67,70 @@ void main() {
     // asset catalogue.
     for (final file in dir.listSync().whereType<File>()) {
       final name = file.uri.pathSegments.last;
-      if (name != 'Contents.json' && !_outputs.containsKey(name)) {
+      if (name != 'Contents.json' && !_iosOutputs.containsKey(name)) {
         file.deleteSync();
       }
     }
   });
+
+  test('generate Android launcher icons', () async {
+    expect(Directory(_androidResDir).existsSync(), isTrue,
+        reason: 'run from the repo root');
+
+    for (final density in _densities.entries) {
+      final dir = Directory('$_androidResDir/mipmap-${density.key}');
+      expect(dir.existsSync(), isTrue, reason: '${dir.path} is missing');
+
+      // The legacy square bitmap is 48 dp; the adaptive layers are 108 dp, of
+      // which only the middle 72 dp survives the launcher mask.
+      final legacy = (48 * density.value).round();
+      final layer = (108 * density.value).round();
+
+      Future<void> write(String name, int size, IconPainter painter,
+          {required bool opaque}) async {
+        final bytes = await _renderPng(size, painter, opaque: opaque);
+        File('${dir.path}/$name').writeAsBytesSync(bytes);
+      }
+
+      await write('ic_launcher.png', legacy, AppIconPainter.paintSquare,
+          opaque: true);
+      await write('ic_launcher_background.png', layer,
+          AppIconPainter.paintAdaptiveBackground,
+          opaque: true);
+      await write('ic_launcher_foreground.png', layer,
+          AppIconPainter.paintAdaptiveForeground,
+          opaque: false);
+      await write('ic_launcher_monochrome.png', layer,
+          AppIconPainter.paintAdaptiveMonochrome,
+          opaque: false);
+    }
+  });
 }
 
-Future<Uint8List> _renderIcon(int size) async {
+Future<Uint8List> _renderPng(int size, IconPainter painter,
+    {required bool opaque}) async {
   final recorder = ui.PictureRecorder();
-  AppIconPainter.paint(ui.Canvas(recorder), size.toDouble());
+  painter(ui.Canvas(recorder), size.toDouble());
   final picture = recorder.endRecording();
   final image = await picture.toImage(size, size);
-  final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+  // Straight (unpremultiplied) RGBA is what PNG stores.
+  final data = await image.toByteData(
+    format: opaque
+        ? ui.ImageByteFormat.rawRgba
+        : ui.ImageByteFormat.rawStraightRgba,
+  );
   picture.dispose();
   image.dispose();
-  return _encodeOpaquePng(data!.buffer.asUint8List(), size, size);
+  return _encodePng(data!.buffer.asUint8List(), size, size, opaque: opaque);
 }
 
-/// Minimal PNG writer: 8-bit truecolour (colour type 2), so the alpha channel
-/// never reaches the file. The canvas is painted edge to edge, so dropping
-/// alpha is lossless here.
-Uint8List _encodeOpaquePng(Uint8List rgba, int width, int height) {
-  final raw = Uint8List(height * (1 + width * 3));
+/// Minimal PNG writer: 8-bit truecolour, with (colour type 6) or without
+/// (colour type 2) an alpha channel. An opaque icon is painted edge to edge,
+/// so dropping its alpha is lossless.
+Uint8List _encodePng(Uint8List rgba, int width, int height,
+    {required bool opaque}) {
+  final channels = opaque ? 3 : 4;
+  final raw = Uint8List(height * (1 + width * channels));
   var o = 0;
   for (var y = 0; y < height; y++) {
     raw[o++] = 0; // filter: none
@@ -85,6 +139,7 @@ Uint8List _encodeOpaquePng(Uint8List rgba, int width, int height) {
       raw[o++] = rgba[i];
       raw[o++] = rgba[i + 1];
       raw[o++] = rgba[i + 2];
+      if (!opaque) raw[o++] = rgba[i + 3];
     }
   }
 
@@ -94,10 +149,10 @@ Uint8List _encodeOpaquePng(Uint8List rgba, int width, int height) {
   final ihdr = BytesBuilder()
     ..add(_uint32(width))
     ..add(_uint32(height))
-    ..add(const [8, 2, 0, 0, 0]);
+    ..add([8, opaque ? 2 : 6, 0, 0, 0]);
   out.add(_chunk('IHDR', ihdr.toBytes()));
-  out.add(_chunk(
-      'IDAT', Uint8List.fromList(ZLibCodec(level: 9).encode(raw))));
+  out.add(
+      _chunk('IDAT', Uint8List.fromList(ZLibCodec(level: 9).encode(raw))));
   out.add(_chunk('IEND', Uint8List(0)));
   return out.toBytes();
 }

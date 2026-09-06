@@ -27,19 +27,129 @@ class AppIconPainter {
   static const _rumbleDark = Color(0xFFC9402F);
   static const _laneLine = Color(0xFFF5EEDF);
 
-  static const _horizonFraction = 0.42;
   static const _roadHalfWidthAtBottom = 0.62;
   static const _roadHalfWidthAtHorizon = 0.012;
 
-  static void paint(Canvas canvas, double s) {
-    canvas.clipRect(Rect.fromLTWH(0, 0, s, s));
-    final horizon = s * _horizonFraction;
+  // Full-bleed square icon (iOS, and the legacy Android launcher bitmap).
+  static const _squareHorizon = 0.42;
+  static const _squareCarBottom = 0.94;
+  static const _squareCarWidth = 0.55;
 
+  // Android adaptive layers are 108 dp but only the middle 72 dp is ever
+  // visible, and a circular mask trims that further. So the scene still bleeds
+  // to the layer edge while every landmark — horizon, sun, car — is composed
+  // inside that centre window, and the car stays within the 66 dp safe circle.
+  static const _adaptiveHorizon = 0.447;
+  static const _adaptiveCarBottom = 0.76;
+  static const _adaptiveCarWidth = 0.40;
+
+  /// The whole scene, edge to edge and fully opaque.
+  static void paintSquare(Canvas canvas, double s) {
+    canvas.clipRect(Rect.fromLTWH(0, 0, s, s));
+    _paintScene(canvas, s, s * _squareHorizon);
+    _paintCar(canvas, s,
+        bottomFraction: _squareCarBottom, widthFraction: _squareCarWidth);
+    _paintVignette(canvas, s);
+  }
+
+  /// Adaptive background layer: everything but the car, so the launcher can
+  /// slide the two layers against each other.
+  static void paintAdaptiveBackground(Canvas canvas, double s) {
+    canvas.clipRect(Rect.fromLTWH(0, 0, s, s));
+    _paintScene(canvas, s, s * _adaptiveHorizon);
+  }
+
+  /// Adaptive foreground layer: the car alone on a transparent layer.
+  static void paintAdaptiveForeground(Canvas canvas, double s) {
+    _paintCar(canvas, s,
+        bottomFraction: _adaptiveCarBottom, widthFraction: _adaptiveCarWidth);
+  }
+
+  /// Themed-icon layer. Android tints this by its alpha, so it is a flat white
+  /// silhouette of the same car rather than a colour drawing.
+  static void paintAdaptiveMonochrome(Canvas canvas, double s) {
+    final w = s * _adaptiveCarWidth;
+    final h = w * 0.72; // sedan aspect
+    final paint = Paint()..color = const Color(0xFFFFFFFF);
+
+    // One layer, so the window and tail lights can be punched back out of the
+    // filled body — a solid blob would not read as a car at launcher size.
+    canvas.saveLayer(Rect.fromLTWH(0, 0, s, s), Paint());
+    canvas.translate(s / 2, s * _adaptiveCarBottom);
+
+    final wheelW = w * 0.16;
+    final wheelH = h * 0.22;
+    for (final sx in const [-1.0, 1.0]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(sx * (w / 2 - wheelW * 0.45), -wheelH * 0.45),
+            width: wheelW,
+            height: wheelH,
+          ),
+          Radius.circular(wheelW * 0.3),
+        ),
+        paint,
+      );
+    }
+
+    final bodyH = h * 0.5;
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTWH(-w / 2, -bodyH - h * 0.08, w, bodyH),
+        topLeft: Radius.circular(w * 0.12),
+        topRight: Radius.circular(w * 0.12),
+        bottomLeft: Radius.circular(w * 0.06),
+        bottomRight: Radius.circular(w * 0.06),
+      ),
+      paint,
+    );
+
+    final cabinW = w * 0.72;
+    final cabinH = h - bodyH - h * 0.08;
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTWH(-cabinW / 2, -h, cabinW, cabinH + h * 0.02),
+        topLeft: Radius.circular(w * 0.14),
+        topRight: Radius.circular(w * 0.14),
+      ),
+      paint,
+    );
+
+    final cut = Paint()..blendMode = BlendMode.clear;
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTWH(
+            -cabinW / 2 + w * 0.06, -h + h * 0.06, cabinW - w * 0.12, cabinH * 0.6),
+        topLeft: Radius.circular(w * 0.1),
+        topRight: Radius.circular(w * 0.1),
+        bottomLeft: Radius.circular(w * 0.03),
+        bottomRight: Radius.circular(w * 0.03),
+      ),
+      cut,
+    );
+    final lw = w * 0.16;
+    final lh = h * 0.07;
+    for (final sx in const [-1.0, 1.0]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(sx * (w / 2 - lw * 0.7), -h * 0.46),
+            width: lw,
+            height: lh,
+          ),
+          Radius.circular(lh * 0.4),
+        ),
+        cut,
+      );
+    }
+    canvas.restore();
+  }
+
+  static void _paintScene(Canvas canvas, double s, double horizon) {
     _paintSky(canvas, s, horizon);
     _paintGround(canvas, s, horizon);
     _paintRoad(canvas, s, horizon);
-    _paintCar(canvas, s);
-    _paintVignette(canvas, s);
   }
 
   static void _paintSky(Canvas canvas, double s, double horizon) {
@@ -175,10 +285,15 @@ class AppIconPainter {
     }
   }
 
-  static void _paintCar(Canvas canvas, double s) {
+  static void _paintCar(
+    Canvas canvas,
+    double s, {
+    required double bottomFraction,
+    required double widthFraction,
+  }) {
     final skin = CarCatalog.byId(CarCatalog.defaultId);
-    final bottom = Offset(s / 2, s * 0.94);
-    final width = s * 0.55;
+    final bottom = Offset(s / 2, s * bottomFraction);
+    final width = s * widthFraction;
 
     // Warm pool of light under the car so the silhouette lifts off the road.
     canvas.drawOval(
