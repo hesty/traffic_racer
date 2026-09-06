@@ -54,13 +54,13 @@ class TurboTrafficRushApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: UiTheme.pass,
           brightness: Brightness.dark,
-          primary: UiTheme.pass,
+          primary: UiTheme.accent,
           secondary: UiTheme.accent,
-          surface: const Color(0xFF101D30),
+          surface: UiTheme.surface,
         ),
       ),
       home: Scaffold(
-        backgroundColor: const Color(0xFF05071A),
+        backgroundColor: UiTheme.background,
         body: GameWidget<TrafficRacerGame>.controlled(
           gameFactory: () => TrafficRacerGame(
             settings: settings,

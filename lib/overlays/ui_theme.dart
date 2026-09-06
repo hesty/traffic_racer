@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../progression/car_catalog.dart';
@@ -6,53 +8,44 @@ import '../progression/car_catalog.dart';
 class UiTheme {
   UiTheme._();
 
-  static const accent = Color(0xFFFF844B);
-  static const accentDark = Color(0xFFE85C35);
-  static const coin = Color(0xFFFFC93C);
-
-  /// Turbo Pass violet, deliberately away from the amber the coin economy
-  /// owns so a paid unlock never reads as something coins could buy.
-  static const pass = Color(0xFFC5D7F0);
-  static const passDark = Color(0xFF809FC9);
-  static const panel = Color(0xED101D30);
-  static const panelBorder = Color(0x33FFFFFF);
+  static const background = Color(0xFF101F25);
+  static const surface = Color(0xFF1B3038);
+  static const ink = Color(0xFFF4F3EA);
+  static const muted = Color(0xFFA7BBC2);
+  static const accent = Color(0xFFFF9861);
+  static const accentDark = Color(0xFFFFAD80);
+  static const coin = Color(0xFFF3D179);
+  static const pass = Color(0xFFB1D8EA);
+  static const passDark = Color(0xFF7CB5CF);
+  static const panel = Color(0xF21B3038);
+  static const panelBorder = Color(0xFF334850);
 
   static TextStyle title(double size) => TextStyle(
     fontSize: size,
-    fontWeight: FontWeight.w900,
+    fontWeight: FontWeight.w800,
     letterSpacing: -0.8,
-    fontStyle: FontStyle.italic,
-    height: 1.05,
-    color: Colors.white,
-    shadows: const [
-      Shadow(color: Color(0xAA000000), blurRadius: 12, offset: Offset(0, 4)),
-    ],
+    height: 1.08,
+    color: ink,
   );
 
   static const label = TextStyle(
-    color: Colors.white70,
+    color: muted,
     fontSize: 13,
-    letterSpacing: 0.2,
-    fontWeight: FontWeight.w600,
+    height: 1.35,
+    fontWeight: FontWeight.w500,
   );
 
   static const value = TextStyle(
-    color: Colors.white,
+    color: ink,
     fontSize: 22,
     fontWeight: FontWeight.w800,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   static BoxDecoration panelDecoration({double radius = 20}) => BoxDecoration(
     color: panel,
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(color: panelBorder),
-    boxShadow: const [
-      BoxShadow(
-        color: Color(0x66000000),
-        blurRadius: 24,
-        offset: Offset(0, 10),
-      ),
-    ],
   );
 }
 
@@ -73,11 +66,15 @@ class FillOrScroll extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         padding: padding,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: constraints.maxHeight - padding.vertical,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 560,
+              minHeight: math.max(0, constraints.maxHeight - padding.vertical),
+            ),
+            child: IntrinsicHeight(child: child),
           ),
-          child: IntrinsicHeight(child: child),
         ),
       ),
     );
@@ -105,21 +102,23 @@ class InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black45,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
+        color: UiTheme.surface,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: fontSize + 3),
           const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w800,
-              fontSize: fontSize,
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+                fontSize: fontSize,
+              ),
             ),
           ),
         ],
@@ -135,7 +134,7 @@ class PrimaryButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.color = UiTheme.accent,
-    this.foreground = Colors.black,
+    this.foreground = UiTheme.background,
   });
 
   final String label;
@@ -157,16 +156,16 @@ class PrimaryButton extends StatelessWidget {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w900,
-          letterSpacing: 0.4,
+          letterSpacing: -0.2,
         ),
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         foregroundColor: foreground,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        minimumSize: const Size(0, 56),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        elevation: 2,
-        shadowColor: color.withValues(alpha: 0.6),
+        elevation: 0,
       ),
     );
   }
@@ -198,13 +197,15 @@ class GhostButton extends StatelessWidget {
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w700,
-          letterSpacing: 1,
+          letterSpacing: 0,
         ),
       ),
       style: OutlinedButton.styleFrom(
-        foregroundColor: color ?? Colors.white,
+        minimumSize: const Size(0, 52),
+        backgroundColor: UiTheme.surface,
+        foregroundColor: color ?? UiTheme.ink,
         side: BorderSide(
-          color: color?.withValues(alpha: 0.6) ?? Colors.white38,
+          color: color?.withValues(alpha: 0.6) ?? UiTheme.panelBorder,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -225,16 +226,16 @@ class PassBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: UiTheme.pass.withValues(alpha: 0.14),
-      borderRadius: BorderRadius.circular(24),
+      color: UiTheme.surface,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: UiTheme.pass.withValues(alpha: 0.55)),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: UiTheme.panelBorder),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -267,4 +268,35 @@ class PassBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Shared opaque backdrop keeps menu text legible over every road environment.
+class MenuSurface extends StatelessWidget {
+  const MenuSurface({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: UiTheme.background,
+    child: SizedBox.expand(child: SafeArea(child: child)),
+  );
+}
+
+class RaceStat extends StatelessWidget {
+  const RaceStat({super.key, required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(value, style: UiTheme.value),
+      ),
+      const SizedBox(height: 4),
+      Text(label, style: UiTheme.label, textAlign: TextAlign.center),
+    ],
+  );
 }

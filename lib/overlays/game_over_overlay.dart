@@ -21,27 +21,40 @@ class GameOverOverlay extends StatelessWidget {
         : '$meters m';
     final summary = game.lastRunSummary;
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xAA05071A),
-      child: SafeArea(
+    return MenuSurface(
+      child: SizedBox(
         child: FillOrScroll(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 2),
-              ShaderMask(
-                shaderCallback: (b) => const LinearGradient(
-                  colors: [Color(0xFFFF5252), UiTheme.accentDark],
-                ).createShader(b),
-                child: Text('WRECKED', style: UiTheme.title(40)),
+              Icon(
+                game.isNewRecord
+                    ? Icons.emoji_events_outlined
+                    : Icons.sports_score_rounded,
+                color: UiTheme.accent,
+                size: 40,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                game.isNewRecord ? 'A new personal best.' : 'What a ride.',
+                style: UiTheme.title(32),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Run complete',
+                style: UiTheme.label,
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               Text(
                 '${stats.score}',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 72,
+                  fontSize: 64,
+                  letterSpacing: -2,
                   fontWeight: FontWeight.w900,
                   height: 1,
                 ),
@@ -49,23 +62,43 @@ class GameOverOverlay extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 game.isNewRecord
-                    ? 'NEW BEST'
-                    : 'BEST  ${game.highScores.bestScore.value}',
+                    ? 'Personal record'
+                    : 'Personal best  ${game.highScores.bestScore.value}',
+                textAlign: TextAlign.center,
                 style: UiTheme.label.copyWith(
                   fontSize: 14,
                   color: game.isNewRecord ? UiTheme.accent : Colors.white70,
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'LV ${stats.level}   ·   $distance   ·   ${stats.nearMisses} NEAR MISS',
-                textAlign: TextAlign.center,
-                style: UiTheme.label.copyWith(color: Colors.white),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 18,
+                ),
+                decoration: UiTheme.panelDecoration(),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: RaceStat(label: 'Level', value: '${stats.level}'),
+                    ),
+                    Expanded(
+                      child: RaceStat(label: 'Distance', value: distance),
+                    ),
+                    Expanded(
+                      child: RaceStat(
+                        label: 'Near misses',
+                        value: '${stats.nearMisses}',
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (summary != null) ...[
                 const SizedBox(height: 18),
                 _Rewards(summary: summary),
               ],
+              const SizedBox(height: 24),
               const Spacer(flex: 3),
               ListenableBuilder(
                 listenable: game.progression.purchases,
@@ -85,7 +118,7 @@ class GameOverOverlay extends StatelessWidget {
                       ),
               ),
               PrimaryButton(
-                label: 'RACE AGAIN',
+                label: 'Race again',
                 icon: Icons.replay_rounded,
                 onPressed: game.startRun,
               ),
@@ -94,7 +127,7 @@ class GameOverOverlay extends StatelessWidget {
                 children: [
                   Expanded(
                     child: GhostButton(
-                      label: 'GARAGE',
+                      label: 'Garage',
                       icon: Icons.garage_rounded,
                       onPressed: game.openGarage,
                     ),
@@ -102,7 +135,7 @@ class GameOverOverlay extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: GhostButton(
-                      label: 'MENU',
+                      label: 'Menu',
                       icon: Icons.home_rounded,
                       onPressed: game.backToMenu,
                     ),
@@ -131,14 +164,14 @@ class _Rewards extends StatelessWidget {
       children: [
         InfoChip(
           icon: Icons.monetization_on_rounded,
-          text: '+${summary.totalCoins} COINS',
+          text: '+${summary.totalCoins} coins earned',
           color: UiTheme.coin,
           fontSize: 18,
         ),
         if (summary.streakDays > 1) ...[
           const SizedBox(height: 6),
           Text(
-            '${summary.streakDays} DAY STREAK  ·  x$multiplier COINS',
+            '${summary.streakDays}-day streak: ×$multiplier coins',
             style: UiTheme.label.copyWith(
               color: UiTheme.accentDark,
               fontSize: 12,
@@ -148,7 +181,7 @@ class _Rewards extends StatelessWidget {
         if (summary.passMultiplier > 1) ...[
           const SizedBox(height: 6),
           Text(
-            'TURBO PASS  ·  x${summary.passMultiplier.toStringAsFixed(1)} COINS',
+            'Turbo Pass: ×${summary.passMultiplier.toStringAsFixed(1)} coins',
             style: UiTheme.label.copyWith(color: UiTheme.pass, fontSize: 12),
           ),
         ],
@@ -196,7 +229,7 @@ class _BonusLine extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              text.toUpperCase(),
+              text,
               overflow: TextOverflow.ellipsis,
               style: UiTheme.label.copyWith(color: Colors.white, fontSize: 12),
             ),

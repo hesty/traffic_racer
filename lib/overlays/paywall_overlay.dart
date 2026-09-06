@@ -65,11 +65,8 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xF205071A),
-      child: SafeArea(
+    return MenuSurface(
+      child: SizedBox(
         child: ListenableBuilder(
           listenable: _purchases,
           builder: (context, _) => FillOrScroll(
@@ -100,15 +97,16 @@ class _PaywallOverlayState extends State<PaywallOverlay> {
             icon: const Icon(Icons.close_rounded),
           ),
         ),
-        ShaderMask(
-          shaderCallback: (b) => const LinearGradient(
-            colors: [UiTheme.pass, UiTheme.passDark],
-          ).createShader(b),
-          child: Text(
-            'TURBO PASS',
-            textAlign: TextAlign.center,
-            style: UiTheme.title(32),
-          ),
+        const Icon(
+          Icons.workspace_premium_outlined,
+          color: UiTheme.pass,
+          size: 36,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Turbo Pass',
+          textAlign: TextAlign.center,
+          style: UiTheme.title(34),
         ),
         const SizedBox(height: 8),
         Text(
@@ -253,7 +251,7 @@ class _PremiumCarStrip extends StatelessWidget {
                       SizedBox(height: 38, child: CarPreview(skin: skin)),
                       const SizedBox(height: 6),
                       Text(
-                        skin.label.toUpperCase(),
+                        skin.label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: UiTheme.label.copyWith(fontSize: 10),
@@ -289,72 +287,76 @@ class _PlanCard extends StatelessWidget {
     final perMonth = offer.period == PassPeriod.annual
         ? offer.pricePerMonthLabel
         : null;
-    return Material(
-      color: selected ? UiTheme.pass.withValues(alpha: 0.14) : UiTheme.panel,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? UiTheme.pass.withValues(alpha: 0.14) : UiTheme.panel,
         borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: selected ? UiTheme.pass : Colors.white24,
-              width: selected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_off_rounded,
-                size: 22,
-                color: selected ? UiTheme.pass : Colors.white38,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: selected ? UiTheme.pass : Colors.white24,
+                width: selected ? 2 : 1,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            offer.periodLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: UiTheme.label.copyWith(
-                              color: Colors.white,
-                              fontSize: 12,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  size: 22,
+                  color: selected ? UiTheme.pass : Colors.white38,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              offer.periodLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: UiTheme.label.copyWith(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
-                        ),
-                        if (savingsPercent != null) ...[
-                          const SizedBox(width: 8),
-                          _SaveBadge(percent: savingsPercent!),
+                          if (savingsPercent != null) ...[
+                            const SizedBox(width: 8),
+                            _SaveBadge(percent: savingsPercent!),
+                          ],
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      perMonth == null
-                          ? offer.priceLabel
-                          : '${offer.priceLabel}  ·  $perMonth / mo',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        perMonth == null
+                            ? offer.priceLabel
+                            : '${offer.priceLabel}  ·  $perMonth / mo',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -376,7 +378,7 @@ class _SaveBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        'SAVE $percent%',
+        'Save $percent%',
         style: const TextStyle(
           color: UiTheme.pass,
           fontSize: 10,
@@ -394,7 +396,7 @@ class _ActiveNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoChip(
       icon: Icons.workspace_premium_rounded,
-      text: 'PASS ACTIVE',
+      text: 'Pass active',
       color: UiTheme.pass,
       fontSize: 15,
     );
@@ -436,7 +438,7 @@ class _FooterLink extends StatelessWidget {
       onPressed: onTap,
       style: TextButton.styleFrom(
         foregroundColor: Colors.white54,
-        minimumSize: const Size(0, 36),
+        minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 10),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
