@@ -10,6 +10,7 @@ import 'package:turbo_traffic_rush/overlays/garage_overlay.dart';
 import 'package:turbo_traffic_rush/overlays/hud_overlay.dart';
 import 'package:turbo_traffic_rush/overlays/menu_overlay.dart';
 import 'package:turbo_traffic_rush/overlays/paywall_overlay.dart';
+import 'package:turbo_traffic_rush/overlays/pause_overlay.dart';
 import 'package:turbo_traffic_rush/progression/run_stats.dart';
 import 'package:turbo_traffic_rush/progression/subscription.dart';
 import 'package:turbo_traffic_rush/services/high_score_service.dart';
@@ -18,9 +19,14 @@ import 'package:turbo_traffic_rush/services/settings_service.dart';
 /// Lays every overlay out on a small and a tall phone. A RenderFlex overflow
 /// throws in tests, so this guards the busier menu and result screens.
 void main() {
-  const sizes = [Size(320, 568), Size(360, 640), Size(390, 844)];
+  const sizes = [
+    Size(320, 568),
+    Size(360, 640),
+    Size(390, 844),
+    Size(768, 1024),
+  ];
 
-  TrafficRacerGame makeGame() {
+  TrafficRacerGame makeGame({bool finishRun = true}) {
     final progression = ProgressionCoordinator();
     progression.garage.creditCoins(480);
     // No store answers in a test, so hand the paywall its widest state.
@@ -56,7 +62,7 @@ void main() {
       progression: progression,
       random: Random(1),
     );
-    game.lastRunSummary = progression.onRunFinished(huge);
+    if (finishRun) game.lastRunSummary = progression.onRunFinished(huge);
     game.isNewRecord = true;
     game.stats.score = 12345;
     game.hud.publish(
@@ -72,13 +78,24 @@ void main() {
     return game;
   }
 
-  Future<void> pumpOverlay(WidgetTester tester, Widget child, Size size) async {
+  Future<void> pumpOverlay(
+    WidgetTester tester,
+    Widget child,
+    Size size, {
+    double textScale = 1,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData.dark(useMaterial3: true),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: Scaffold(body: child),
       ),
     );
@@ -94,16 +111,85 @@ void main() {
   }
 
   for (final size in sizes) {
-    testWidgets(
-      'overlays fit a ${size.width.toInt()}x${size.height.toInt()} screen',
-      (tester) async {
-        final game = makeGame();
-        await pumpOverlay(tester, MenuOverlay(game: game), size);
-        await pumpOverlay(tester, GameOverOverlay(game: game), size);
-        await pumpOverlay(tester, GarageOverlay(game: game), size);
-        await pumpOverlay(tester, PaywallOverlay(game: game), size);
-        await pumpOverlay(tester, HudOverlay(game: game), size);
-      },
-    );
+    for (final textScale in [1.0, 1.6]) {
+      testWidgets(
+        'overlays fit a ${size.width.toInt()}x${size.height.toInt()} screen at text scale $textScale',
+        (tester) async {
+          final game = makeGame();
+          await pumpOverlay(
+            tester,
+            MenuOverlay(game: game),
+            size,
+            textScale: textScale,
+          );
+          await pumpOverlay(
+            tester,
+            GameOverOverlay(game: game),
+            size,
+            textScale: textScale,
+          );
+          await pumpOverlay(
+            tester,
+            GarageOverlay(game: game),
+            size,
+            textScale: textScale,
+          );
+          await pumpOverlay(
+            tester,
+            PaywallOverlay(game: game),
+            size,
+            textScale: textScale,
+          );
+          await pumpOverlay(
+            tester,
+            PauseOverlay(game: game),
+            size,
+            textScale: textScale,
+          );
+          await pumpOverlay(
+            tester,
+            HudOverlay(game: game),
+            size,
+            textScale: textScale,
+          );
+        },
+      );
+    }
   }
+
+  testWidgets('race action is visible on a small phone and sound toggles', (
+    tester,
+  ) async {
+    final game = makeGame();
+    await pumpOverlay(tester, MenuOverlay(game: game), const Size(320, 568));
+    expect(tester.getBottomRight(find.text('Start racing')).dy, lessThan(568));
+    await tester.ensureVisible(find.byTooltip('Sound: on'));
+    await tester.tap(find.byTooltip('Sound: on'));
+    await tester.pump();
+    expect(game.settings.soundEnabled.value, isFalse);
+    expect(find.byTooltip('Sound: off'), findsOneWidget);
+  });
+
+  testWidgets('garage selects an owned car and explains locked coin cars', (
+    tester,
+  ) async {
+    final game = makeGame();
+    game.progression.garage.buy('sedan_blue');
+    await pumpOverlay(tester, GarageOverlay(game: game), const Size(390, 844));
+    await tester.tap(find.text('Cobalt'));
+    await tester.pump();
+    expect(game.progression.garage.selectedSkin.id, 'sedan_blue');
+    expect(find.text('Cobalt'), findsNWidgets(2));
+    await tester.scrollUntilVisible(
+      find.text('Shadow'),
+      200,
+      scrollable: find.byType(Scrollable),
+    );
+    final before = game.progression.garage.coins;
+    await tester.tap(find.text('Shadow'));
+    await tester.pump();
+    expect(game.progression.garage.coins, before);
+    expect(game.progression.garage.selectedSkin.id, 'sedan_blue');
+    expect(find.text('${800 - before} more coins'), findsOneWidget);
+  });
 }
