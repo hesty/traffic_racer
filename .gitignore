@@ -25,3 +25,7 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Shorebird release artifacts + local dart-define overrides
+releases/
+dart_defines.*.json

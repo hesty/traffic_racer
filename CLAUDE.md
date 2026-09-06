@@ -23,6 +23,13 @@ Helper scripts (run from `scripts/`):
 - `generate_audio.py` — regenerates every WAV in `assets/audio/` procedurally (needs `numpy`). Sound effects are generated, not authored; edit the script rather than the WAVs.
 - `check_16_kb.sh <apk|aab|dir>` — checks native libs for Android 16 KB page alignment (Google Play requirement).
 
+The iOS app icon is generated too, not authored: `flutter test tool/generate_app_icon.dart`
+(from the repo root) redraws every PNG in `ios/Runner/Assets.xcassets/AppIcon.appiconset`
+plus its `Contents.json` from `tool/app_icon_painter.dart`, which paints the icon with the
+same `VehiclePainter` and dusk palette the game uses. Each size is rendered from the vector,
+and written as an opaque 24-bit PNG because App Store Connect rejects a marketing icon with
+an alpha channel. Edit the painter, never the PNGs.
+
 Tests are mostly pure Dart unit tests over `core/`, `game/`, `progression/` and the pass rules in `test/subscription_test.dart`, relying on deterministic seeds (`Track.generate(seed:)`, `Random(n)` injected into `TrafficManager`, `MissionCatalog.forDay(dayKey)`) and injected clocks (`now:` on `MissionsService`/`StreakService`/`ProgressionCoordinator`). Two deliberate exceptions use `testWidgets`: `test/render_test.dart` renders a full run offscreen so painter exceptions fail the build, and `test/overlay_layout_test.dart` pumps each overlay at phone sizes so a `RenderFlex` overflow fails (the test font is much wider than real fonts, so horizontal fits are conservative). Persisting services are tested against `SharedPreferences.setMockInitialValues({})`. No Flame `GameWidget` in tests.
 
 ## Architecture
