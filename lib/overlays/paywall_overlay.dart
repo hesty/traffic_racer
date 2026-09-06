@@ -324,7 +324,9 @@ class _PlanCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              offer.periodLabel,
+                              offer.period == PassPeriod.annual
+                                  ? 'Yearly'
+                                  : 'Monthly',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: UiTheme.label.copyWith(
@@ -341,17 +343,20 @@ class _PlanCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        perMonth == null
-                            ? offer.priceLabel
-                            : '${offer.priceLabel}  ·  $perMonth / mo',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        offer.priceLabel,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 17,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
+                      if (perMonth != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '$perMonth / month, billed yearly',
+                          style: UiTheme.label.copyWith(fontSize: 12),
+                        ),
+                      ],
                     ],
                   ),
                 ),

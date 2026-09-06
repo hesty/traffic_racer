@@ -13,7 +13,7 @@ anchor, racing is the first action, and progression supports the next run.
 - Coin gold `#F3D179`: earned currency; ice blue distinguishes Turbo Pass.
 
 Use the platform sans serif for readable interface text. Heavy, tightly spaced,
-italic display type is reserved for the game wordmark. Tabular figures make race
+italic display type is reserved for the main racing headline. Tabular figures make race
 telemetry stable. Titles elsewhere are upright and sentence case.
 
 ## Layout
@@ -23,7 +23,7 @@ Constrain full-screen menus on tablets. Allow vertical scrolling on short screen
 and with larger text. Controls have at least 48 logical pixels of touch space.
 
     [race emblem / game name]           [coins]
-    Turbo Traffic Rush        [personal best]
+    Own the open road.        [personal best]
     [        selected car / pit-lane stage   ]
     [             Start racing              ]
     [Garage]                 [sound / music]

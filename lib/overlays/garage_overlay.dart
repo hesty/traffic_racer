@@ -274,7 +274,7 @@ class _StateRow extends StatelessWidget {
     }
     return _Tag(
       icon: affordable ? Icons.monetization_on_rounded : Icons.lock_rounded,
-      text: '${skin.price}',
+      text: affordable ? 'Buy ${skin.price}' : '${skin.price} coins',
       color: affordable ? UiTheme.coin : UiTheme.muted,
     );
   }

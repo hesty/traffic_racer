@@ -230,12 +230,14 @@ class _PowerUpRow extends StatelessWidget {
                     children: [
                       Icon(entry.key.icon, color: entry.key.color, size: 16),
                       const SizedBox(width: 4),
-                      Text(
-                        entry.key.label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
+                      Flexible(
+                        child: Text(
+                          entry.key.label,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],

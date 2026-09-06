@@ -22,9 +22,14 @@ class MenuOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MenuSurface(
-      child: FillOrScroll(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: _MenuBody(game: game, tiltSupported: _tiltSupported),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: _MenuBody(game: game, tiltSupported: _tiltSupported),
+          ),
+        ),
       ),
     );
   }
@@ -38,6 +43,7 @@ class _MenuBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).height < 700;
     final settings = game.settings;
     final progression = game.progression;
     return Column(
@@ -61,47 +67,63 @@ class _MenuBody extends StatelessWidget {
                 ),
               ),
             ),
-            ListenableBuilder(
-              listenable: Listenable.merge([
-                progression.garage,
-                progression.streak.streak,
-              ]),
-              builder: (_, _) => _WalletRow(
-                coins: progression.garage.coins,
-                streak: progression.streak.streak.value,
+            Flexible(
+              child: ListenableBuilder(
+                listenable: Listenable.merge([
+                  progression.garage,
+                  progression.streak.streak,
+                ]),
+                builder: (_, _) => _WalletRow(
+                  coins: progression.garage.coins,
+                  streak: progression.streak.streak.value,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: compact ? 16 : 24),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: Text(
-                'Own the\nopen road.',
-                style: UiTheme.title(38).copyWith(
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1.5,
+              flex: 2,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Own the\nopen road.',
+                  style: UiTheme.title(38).copyWith(
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.5,
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            ValueListenableBuilder<int>(
-              valueListenable: game.highScores.bestScore,
-              builder: (_, best, _) => Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Icon(
-                    Icons.emoji_events_outlined,
-                    color: UiTheme.coin,
-                    size: 20,
-                  ),
-                  const SizedBox(height: 6),
-                  Text('$best', style: UiTheme.value),
-                  const Text('Personal best', style: UiTheme.label),
-                ],
+            Flexible(
+              child: ValueListenableBuilder<int>(
+                valueListenable: game.highScores.bestScore,
+                builder: (_, best, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Icon(
+                      Icons.emoji_events_outlined,
+                      color: UiTheme.coin,
+                      size: 20,
+                    ),
+                    const SizedBox(height: 6),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('$best', style: UiTheme.value),
+                    ),
+                    const Text(
+                      'Personal best',
+                      style: UiTheme.label,
+                      textAlign: TextAlign.right,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -109,7 +131,10 @@ class _MenuBody extends StatelessWidget {
         const SizedBox(height: 20),
         ListenableBuilder(
           listenable: progression.garage,
-          builder: (_, _) => CarShowcase(skin: progression.garage.selectedSkin),
+          builder: (_, _) => CarShowcase(
+            skin: progression.garage.selectedSkin,
+            compact: compact,
+          ),
         ),
         const SizedBox(height: 16),
         PrimaryButton(
@@ -129,16 +154,19 @@ class _MenuBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
+        Wrap(
+          spacing: 6,
+          runSpacing: 10,
+          alignment: WrapAlignment.spaceBetween,
           children: [
-            Expanded(
+            SizedBox(
+              width: 132,
               child: GhostButton(
                 label: 'Garage',
                 icon: Icons.garage_outlined,
                 onPressed: game.openGarage,
               ),
             ),
-            const SizedBox(width: 12),
             _Toggle(
               label: 'Sound',
               listenable: settings.soundEnabled,
@@ -146,7 +174,6 @@ class _MenuBody extends StatelessWidget {
               offIcon: Icons.volume_off_rounded,
               onTap: settings.toggleSound,
             ),
-            const SizedBox(width: 6),
             _Toggle(
               label: 'Music',
               listenable: settings.musicEnabled,
@@ -155,7 +182,6 @@ class _MenuBody extends StatelessWidget {
               onTap: settings.toggleMusic,
             ),
             if (tiltSupported) ...[
-              const SizedBox(width: 6),
               _Toggle(
                 label: 'Tilt steering',
                 listenable: settings.tiltEnabled,
@@ -173,7 +199,6 @@ class _MenuBody extends StatelessWidget {
               _MissionsPanel(missions: progression.missions.missions),
         ),
         const SizedBox(height: 18),
-        const Spacer(),
         ListenableBuilder(
           listenable: progression.purchases,
           builder: (_, _) => progression.purchases.isActive

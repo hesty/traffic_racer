@@ -173,8 +173,9 @@ void main() {
   testWidgets('garage selects an owned car and explains locked coin cars', (
     tester,
   ) async {
-    final game = makeGame();
+    final game = makeGame(finishRun: false);
     game.progression.garage.buy('sedan_blue');
+    game.progression.garage.select('sedan_amber');
     await pumpOverlay(tester, GarageOverlay(game: game), const Size(390, 844));
     await tester.tap(find.text('Cobalt'));
     await tester.pump();
@@ -185,6 +186,9 @@ void main() {
       200,
       scrollable: find.byType(Scrollable),
     );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Shadow'));
+    await tester.pumpAndSettle();
     final before = game.progression.garage.coins;
     await tester.tap(find.text('Shadow'));
     await tester.pump();
